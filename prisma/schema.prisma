@@ -1,0 +1,200 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Merchant {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  phone     String
+  whatsapp  String?
+  password  String
+  role      String   @default("MERCHANT")
+  plan      String   @default("FREE") // FREE, STARTER, GROWTH, PRO, ENTERPRISE
+  stores    Store[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Store {
+  id                 String                  @id @default(uuid())
+  merchantId         String
+  merchant           Merchant                @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  name               String
+  slug               String                  @unique
+  ownerName          String
+  phone              String
+  whatsapp           String
+  address            String
+  city               String
+  state              String
+  pincode            String
+  mapsUrl            String?
+  logo               String?
+  description        String?
+  businessType       String                  // Kirana, Restaurant, Fashion, Salon, Electronics, etc.
+  themeConfigJson    String                  @default("{}") // theme color, layout mode, features
+  deliveryConfigJson String                  @default("{}") // radius, charges, min order, slots
+  paymentConfigJson  String                  @default("{}") // upi, cod, card toggles
+  seoMetaJson        String                  @default("{}") // meta title, description, schema
+  qrCodeUrl          String?
+  customDomain       String?                 @unique
+  isActive           Boolean                 @default(true)
+  categories         Category[]
+  products           Product[]
+  orders             Order[]
+  posTransactions    PosTransaction[]
+  customers          Customer[]
+  coupons            Coupon[]
+  inventoryLogs      InventoryTransaction[]
+  aiLogs             AiLog[]
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  storeId   String
+  store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name      String
+  slug      String
+  icon      String?
+  sortOrder Int       @default(0)
+  products  Product[]
+  createdAt DateTime  @default(now())
+
+  @@unique([storeId, slug])
+}
+
+model Product {
+  id             String                 @id @default(uuid())
+  storeId        String
+  store          Store                  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  categoryId     String?
+  category       Category?              @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  name           String
+  slug           String
+  description    String?
+  image          String?
+  attributesJson String                 @default("{}") // variants, size, color, brand, material, staff, etc.
+  price          Float
+  mrp            Float?
+  stock          Int                    @default(0)
+  sku            String?
+  barcode        String?
+  unit           String?                // kg, g, l, ml, piece, pkt, box, service
+  isVeg          Boolean?               // for food/kirana
+  prepTime       String?                // for restaurant
+  isAvailable    Boolean                @default(true)
+  inventoryLogs  InventoryTransaction[]
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  @@unique([storeId, slug])
+}
+
+model InventoryTransaction {
+  id        String   @id @default(uuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  change    Int      // positive for restock, negative for sale
+  reason    String   // PURCHASE, ONLINE_SALE, POS_SALE, AUDIT_ADJUSTMENT
+  source    String   // WEBSITE, POS, WHATSAPP, MANUAL
+  createdAt DateTime @default(now())
+}
+
+model Order {
+  id             String   @id @default(uuid())
+  storeId        String
+  store          Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orderNumber    String   @unique
+  customerName   String
+  customerPhone  String
+  customerAddress String?
+  pincode        String?
+  totalAmount    Float
+  discountAmount Float    @default(0)
+  deliveryCharge Float    @default(0)
+  grandTotal     Float
+  paymentMethod  String   // UPI, COD, CARD
+  paymentStatus  String   @default("PENDING") // PENDING, PAID, FAILED, REFUNDED
+  orderStatus    String   @default("PENDING") // PENDING, ACCEPTED, PREPARING, READY, OUT_FOR_DELIVERY, DELIVERED, CANCELLED
+  deliverySlot   String?
+  notes          String?
+  itemsJson      String   // Array of purchased products with qty, price, options
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model PosTransaction {
+  id            String   @id @default(uuid())
+  storeId       String
+  store         Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  receiptNumber String   @unique
+  totalAmount   Float
+  paymentMode   String   // CASH, UPI, CARD, CREDIT
+  customerName  String?
+  customerPhone String?
+  itemsJson     String   // Array of items sold
+  createdAt     DateTime @default(now())
+}
+
+model Customer {
+  id            String    @id @default(uuid())
+  storeId       String
+  store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name          String
+  phone         String
+  email         String?
+  address       String?
+  totalOrders   Int       @default(0)
+  totalSpent    Float     @default(0)
+  loyaltyPoints Int       @default(0)
+  segment       String    @default("NEW") // NEW, REPEAT, VIP, INACTIVE
+  lastOrderAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@unique([storeId, phone])
+}
+
+model Coupon {
+  id            String    @id @default(uuid())
+  storeId       String
+  store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  code          String
+  discountType  String    // PERCENTAGE, FLAT
+  discountValue Float
+  minOrderValue Float     @default(0)
+  maxDiscount   Float?
+  expiresAt     DateTime?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+
+  @@unique([storeId, code])
+}
+
+model AiLog {
+  id         String   @id @default(uuid())
+  storeId    String
+  store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  action     String   // PRODUCT_GEN, IMAGE_SCAN, VOICE_PARSE, MARKETING_GEN, ASSISTANT_QUERY
+  prompt     String
+  result     String
+  tokensUsed Int      @default(1)
+  createdAt  DateTime @default(now())
+}
+
+model SuperAdmin {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String   @default("Super Admin")
+  createdAt DateTime @default(now())
+}
