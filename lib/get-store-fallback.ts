@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { generateStoreConfig, BUSINESS_CATEGORIES } from '@/lib/store-generator';
+import { generateStoreConfig } from '@/lib/store-generator';
 
 export async function getStoreWithFallback(storeIdOrSlug: string) {
   let store: any = null;
@@ -35,7 +35,9 @@ export async function getStoreWithFallback(storeIdOrSlug: string) {
   // If store exists in DB, return the real customer-created shop!
   if (store) return store;
 
-  // Otherwise, intelligently infer business category from slug/id keywords:
+  // Otherwise, check if identifier is a raw UUID or a custom slug
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/i.test(storeIdOrSlug);
+
   const lowerKey = storeIdOrSlug.toLowerCase();
   let categoryKey = 'Grocery / Kirana';
 
@@ -44,80 +46,90 @@ export async function getStoreWithFallback(storeIdOrSlug: string) {
     lowerKey.includes('food') ||
     lowerKey.includes('bites') ||
     lowerKey.includes('kitchen') ||
-    lowerKey.includes('restaurant') ||
-    lowerKey.includes('pizza') ||
-    lowerKey.includes('burger') ||
-    lowerKey.includes('bakery') ||
-    lowerKey.includes('dhabba')
+    lowerKey.includes('restaurant')
   ) {
     categoryKey = 'Restaurant / Cafe';
   } else if (
     lowerKey.includes('salon') ||
     lowerKey.includes('spa') ||
     lowerKey.includes('beauty') ||
-    lowerKey.includes('hair') ||
-    lowerKey.includes('glamour') ||
-    lowerKey.includes('parlour')
+    lowerKey.includes('glamour')
   ) {
     categoryKey = 'Salon / Spa';
   } else if (
     lowerKey.includes('fashion') ||
     lowerKey.includes('wear') ||
-    lowerKey.includes('clothing') ||
-    lowerKey.includes('boutique') ||
-    lowerKey.includes('trends') ||
-    lowerKey.includes('apparel')
+    lowerKey.includes('clothing')
   ) {
     categoryKey = 'Fashion & Apparel';
   } else if (
     lowerKey.includes('tech') ||
     lowerKey.includes('mobile') ||
-    lowerKey.includes('electronics') ||
-    lowerKey.includes('gadget') ||
-    lowerKey.includes('computer')
+    lowerKey.includes('electronics')
   ) {
     categoryKey = 'Electronics & Mobiles';
-  } else if (
-    lowerKey.includes('pharma') ||
-    lowerKey.includes('med') ||
-    lowerKey.includes('health') ||
-    lowerKey.includes('chemist')
-  ) {
-    categoryKey = 'Pharmacy / Medical';
   }
 
-  const formattedName = storeIdOrSlug.startsWith('d31d') || storeIdOrSlug.includes('-')
-    ? storeIdOrSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-    : storeIdOrSlug.charAt(0).toUpperCase() + storeIdOrSlug.slice(1);
+  let formattedName = 'Kirana King Supermarket';
+  let ownerName = 'Ramesh Kumar';
+  let cleanSlug = 'kirana-king';
+
+  if (!isUuid) {
+    cleanSlug = storeIdOrSlug;
+    formattedName = storeIdOrSlug
+      .split('-')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+    ownerName = `${formattedName.split(' ')[0]} Manager`;
+  } else {
+    // Map UUIDs to realistic demo shop names
+    const hash = storeIdOrSlug.charCodeAt(0) % 3;
+    if (hash === 1) {
+      formattedName = 'Spicy Bites Kitchen';
+      ownerName = 'Chef Vikrant';
+      cleanSlug = 'spicy-bites';
+      categoryKey = 'Restaurant / Cafe';
+    } else if (hash === 2) {
+      formattedName = 'Glamour Hair & Beauty Salon';
+      ownerName = 'Ananya Sharma';
+      cleanSlug = 'glamour-salon';
+      categoryKey = 'Salon / Spa';
+    } else {
+      formattedName = 'Kirana King Supermarket';
+      ownerName = 'Ramesh Kumar';
+      cleanSlug = 'kirana-king';
+      categoryKey = 'Grocery / Kirana';
+    }
+  }
 
   const generated = generateStoreConfig(categoryKey, formattedName);
 
   return {
     id: storeIdOrSlug,
-    slug: storeIdOrSlug,
+    slug: cleanSlug,
     name: formattedName,
-    ownerName: 'Store Owner',
+    ownerName: ownerName,
     phone: '9876543210',
     whatsapp: '919876543210',
-    address: 'Main Commercial Hub',
-    city: 'Delhi',
+    address: 'Main Commercial Market',
+    city: 'New Delhi',
     state: 'Delhi',
     pincode: '110001',
     businessType: categoryKey,
-    description: `AI-Generated Dynamic Storefront for ${formattedName}`,
+    description: `Official digital storefront for ${formattedName}`,
     logo: null,
     merchantId: 'merchant-default',
     themeConfigJson: JSON.stringify(generated.suggestedTheme),
     deliveryConfigJson: JSON.stringify(generated.suggestedDelivery),
-    paymentConfigJson: JSON.stringify({ upi: true, cod: true, card: true, upiId: `${storeIdOrSlug}@upi` }),
+    paymentConfigJson: JSON.stringify({ upi: true, cod: true, card: true, upiId: `${cleanSlug}@upi` }),
     seoMetaJson: JSON.stringify({
-      title: `${formattedName} - Online Storefront`,
-      description: `Shop directly from ${formattedName}`
+      title: `${formattedName} - Online Dukaan`,
+      description: `Order online from ${formattedName}`
     }),
     merchant: {
       id: 'merchant-default',
-      name: 'Store Owner',
-      email: 'owner@dukaan.com',
+      name: ownerName,
+      email: `${cleanSlug}@dukaan.com`,
       phone: '9876543210',
       plan: 'GROWTH'
     },
@@ -148,9 +160,9 @@ export async function getStoreWithFallback(storeIdOrSlug: string) {
     })),
     orders: [
       {
-        id: 'ord-1',
+        id: 'ord-101',
         orderNumber: 'ORD-1001',
-        customerName: 'Aarav Sharma',
+        customerName: 'Priyanshu Sharma',
         customerPhone: '9876543210',
         grandTotal: 450,
         paymentMethod: 'UPI',
@@ -162,11 +174,12 @@ export async function getStoreWithFallback(storeIdOrSlug: string) {
     customers: [
       {
         id: 'cust-1',
-        name: 'Aarav Sharma',
+        name: 'Priyanshu Sharma',
         phone: '9876543210',
-        totalOrders: 2,
-        totalSpent: 900,
-        segment: 'VIP MEMBER'
+        totalOrders: 3,
+        totalSpent: 1350,
+        segment: 'VIP MEMBER',
+        loyaltyPoints: 135
       }
     ]
   };
