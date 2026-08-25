@@ -1,7 +1,8 @@
-import { prisma } from '@/lib/prisma';
-import { notFound } from 'next/navigation';
 import DashboardHeader from '../DashboardHeader';
 import AiAssistantClient from './AiAssistantClient';
+import { getStoreWithFallback } from '@/lib/get-store-fallback';
+
+export const dynamic = 'force-dynamic';
 
 interface AiPageProps {
   params: Promise<{ storeId: string }>;
@@ -9,14 +10,7 @@ interface AiPageProps {
 
 export default async function AiPage({ params }: AiPageProps) {
   const { storeId } = await params;
-
-  const store = await prisma.store.findUnique({
-    where: { id: storeId }
-  });
-
-  if (!store) {
-    notFound();
-  }
+  const store = await getStoreWithFallback(storeId);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-emerald-500">

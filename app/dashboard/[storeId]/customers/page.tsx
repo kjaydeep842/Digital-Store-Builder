@@ -1,7 +1,8 @@
-import { prisma } from '@/lib/prisma';
-import { notFound } from 'next/navigation';
 import DashboardHeader from '../DashboardHeader';
 import { Users, Award, Star, TrendingUp, Phone, Mail, MapPin } from 'lucide-react';
+import { getStoreWithFallback } from '@/lib/get-store-fallback';
+
+export const dynamic = 'force-dynamic';
 
 interface CustomersPageProps {
   params: Promise<{ storeId: string }>;
@@ -9,21 +10,11 @@ interface CustomersPageProps {
 
 export default async function CustomersPage({ params }: CustomersPageProps) {
   const { storeId } = await params;
+  const store = await getStoreWithFallback(storeId);
 
-  const store = await prisma.store.findUnique({
-    where: { id: storeId },
-    include: {
-      customers: { orderBy: { totalSpent: 'desc' } }
-    }
-  });
-
-  if (!store) {
-    notFound();
-  }
-
-  const vipCustomers = store.customers.filter(c => c.segment === 'VIP');
-  const repeatCustomers = store.customers.filter(c => c.segment === 'REPEAT');
-  const newCustomers = store.customers.filter(c => c.segment === 'NEW');
+  const vipCustomers = (store.customers || []).filter((c: any) => c.segment === 'VIP');
+  const repeatCustomers = (store.customers || []).filter((c: any) => c.segment === 'REPEAT');
+  const newCustomers = (store.customers || []).filter((c: any) => c.segment === 'NEW');
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-emerald-500">
@@ -45,7 +36,7 @@ export default async function CustomersPage({ params }: CustomersPageProps) {
           <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
             <div>
               <span className="text-xs font-bold text-slate-400 block">Total CRM Database</span>
-              <span className="text-2xl font-extrabold text-white mt-1 block">{store.customers.length}</span>
+              <span className="text-2xl font-extrabold text-white mt-1 block">{(store.customers || []).length}</span>
               <span className="text-[10px] text-slate-400 mt-1 block">Online & POS buyers</span>
             </div>
             <div className="h-10 w-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold">
@@ -90,18 +81,18 @@ export default async function CustomersPage({ params }: CustomersPageProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800 font-medium text-slate-200">
-              {store.customers.length === 0 ? (
+              {(!store.customers || store.customers.length === 0) ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-slate-500">No CRM customer records yet.</td>
                 </tr>
               ) : (
-                store.customers.map(c => (
+                store.customers.map((c: any) => (
                   <tr key={c.id} className="hover:bg-slate-800/50 transition">
                     <td className="py-3 px-4 font-bold text-white">{c.name}</td>
                     <td className="py-3 px-4 text-slate-400 font-mono">{c.phone}</td>
                     <td className="py-3 px-4 font-bold text-white">{c.totalOrders}</td>
                     <td className="py-3 px-4 font-extrabold text-emerald-400">₹{c.totalSpent}</td>
-                    <td className="py-3 px-4 text-amber-400 font-bold">🪙 {c.loyaltyPoints} pts</td>
+                    <td className="py-3 px-4 text-amber-400 font-bold">🪙 {c.loyaltyPoints || 0} pts</td>
                     <td className="py-3 px-4">
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                         c.segment === 'VIP'
@@ -110,7 +101,7 @@ export default async function CustomersPage({ params }: CustomersPageProps) {
                           ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
                           : 'bg-slate-800 text-slate-300 border-slate-700'
                       }`}>
-                        {c.segment}
+                        {c.segment || 'STANDARD'}
                       </span>
                     </td>
                   </tr>

@@ -1,7 +1,8 @@
-import { prisma } from '@/lib/prisma';
-import { notFound } from 'next/navigation';
 import DashboardHeader from '../DashboardHeader';
 import { Layers, AlertTriangle, ArrowUpRight, ArrowDownRight, RefreshCw } from 'lucide-react';
+import { getStoreWithFallback } from '@/lib/get-store-fallback';
+
+export const dynamic = 'force-dynamic';
 
 interface InventoryPageProps {
   params: Promise<{ storeId: string }>;
@@ -9,20 +10,8 @@ interface InventoryPageProps {
 
 export default async function InventoryPage({ params }: InventoryPageProps) {
   const { storeId } = await params;
-
-  const store = await prisma.store.findUnique({
-    where: { id: storeId },
-    include: {
-      products: { orderBy: { stock: 'asc' } },
-      inventoryLogs: { orderBy: { createdAt: 'desc' }, take: 10 }
-    }
-  });
-
-  if (!store) {
-    notFound();
-  }
-
-  const lowStockItems = store.products.filter(p => p.stock <= 5);
+  const store = await getStoreWithFallback(storeId);
+  const lowStockItems = (store.products || []).filter((p: any) => p.stock <= 5);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-emerald-500">
@@ -75,7 +64,7 @@ export default async function InventoryPage({ params }: InventoryPageProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800 font-medium text-slate-200">
-                  {store.products.map(p => (
+                  {store.products.map((p: any) => (
                     <tr key={p.id} className="hover:bg-slate-800/50 transition">
                       <td className="py-3 px-4 font-bold text-white">{p.name}</td>
                       <td className="py-3 px-4 font-extrabold">
@@ -99,10 +88,10 @@ export default async function InventoryPage({ params }: InventoryPageProps) {
             </h3>
 
             <div className="space-y-3 text-xs">
-              {store.inventoryLogs.length === 0 ? (
+              {(!store.inventoryLogs || store.inventoryLogs.length === 0) ? (
                 <p className="text-slate-500 text-center py-4">No audit logs recorded yet.</p>
               ) : (
-                store.inventoryLogs.map(log => (
+                store.inventoryLogs.map((log: any) => (
                   <div key={log.id} className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
                     <div className="flex items-center justify-between font-bold">
                       <span className="text-slate-200">{log.reason}</span>
@@ -119,33 +108,6 @@ export default async function InventoryPage({ params }: InventoryPageProps) {
             </div>
           </div>
         </div>
-
-        {/* Supplier Purchase Order Reorder Card */}
-        {lowStockItems.length > 0 && (
-          <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-950/40 via-slate-900 to-slate-900 border border-amber-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div>
-              <h4 className="font-extrabold text-sm text-amber-300 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-amber-400" />
-                <span>Low Stock Velocity Warning: {lowStockItems.length} Products Need Reordering</span>
-              </h4>
-              <p className="text-xs text-slate-400 mt-1">
-                Items requiring restock: <strong>{lowStockItems.map(p => p.name).join(', ')}</strong>
-              </p>
-            </div>
-
-            <a
-              href={`https://wa.me/?text=${encodeURIComponent(
-                `Purchase Order from ${store.name}:\n\nPlease restock the following items:\n` +
-                lowStockItems.map(p => `• ${p.name} (Current Stock: ${p.stock} ${p.unit || 'pcs'}, Reorder Qty: 50)`).join('\n')
-              )}`}
-              target="_blank"
-              rel="noreferrer"
-              className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs transition shadow-lg shrink-0 flex items-center gap-1.5"
-            >
-              <span>Generate Supplier WhatsApp PO 📲</span>
-            </a>
-          </div>
-        )}
       </main>
     </div>
   );

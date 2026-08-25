@@ -1,8 +1,10 @@
-import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import DashboardHeader from './DashboardHeader';
 import { ShoppingBag, DollarSign, Users, AlertTriangle, Package, Smartphone, ArrowRight, Bot, QrCode, TrendingUp, CheckCircle, Clock } from 'lucide-react';
+import { getStoreWithFallback } from '@/lib/get-store-fallback';
+
+export const dynamic = 'force-dynamic';
 
 interface DashboardPageProps {
   params: Promise<{ storeId: string }>;
@@ -10,26 +12,14 @@ interface DashboardPageProps {
 
 export default async function DashboardOverviewPage({ params }: DashboardPageProps) {
   const { storeId } = await params;
-
-  const store = await prisma.store.findUnique({
-    where: { id: storeId },
-    include: {
-      products: { orderBy: { stock: 'asc' } },
-      orders: { orderBy: { createdAt: 'desc' }, take: 5 },
-      customers: true
-    }
-  });
-
-  if (!store) {
-    notFound();
-  }
+  const store = await getStoreWithFallback(storeId);
 
   // Calculate KPIs
-  const totalOrders = store.orders.length;
-  const totalRevenue = store.orders.reduce((sum, o) => sum + o.grandTotal, 0);
-  const pendingOrders = store.orders.filter(o => o.orderStatus === 'PENDING');
-  const lowStockProducts = store.products.filter(p => p.stock <= 5);
-  const totalCustomers = store.customers.length;
+  const totalOrders = (store.orders || []).length;
+  const totalRevenue = (store.orders || []).reduce((sum: number, o: any) => sum + o.grandTotal, 0);
+  const pendingOrders = (store.orders || []).filter((o: any) => o.orderStatus === 'PENDING');
+  const lowStockProducts = (store.products || []).filter((p: any) => p.stock <= 5);
+  const totalCustomers = (store.customers || []).length;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-emerald-500">
@@ -136,7 +126,7 @@ export default async function DashboardOverviewPage({ params }: DashboardPagePro
               </div>
             ) : (
               <div className="divide-y divide-slate-800">
-                {store.orders.map(order => (
+                {store.orders.map((order: any) => (
                   <div key={order.id} className="py-3 flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-2">
@@ -183,7 +173,7 @@ export default async function DashboardOverviewPage({ params }: DashboardPagePro
               </div>
             ) : (
               <div className="space-y-2">
-                {lowStockProducts.slice(0, 4).map(prod => (
+                {lowStockProducts.slice(0, 4).map((prod: any) => (
                   <div key={prod.id} className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                     <div>
                       <h4 className="font-bold text-xs text-white">{prod.name}</h4>

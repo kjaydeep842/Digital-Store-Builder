@@ -1,7 +1,8 @@
-import { prisma } from '@/lib/prisma';
-import { notFound } from 'next/navigation';
 import DashboardHeader from '../DashboardHeader';
 import SettingsClient from './SettingsClient';
+import { getStoreWithFallback } from '@/lib/get-store-fallback';
+
+export const dynamic = 'force-dynamic';
 
 interface SettingsPageProps {
   params: Promise<{ storeId: string }>;
@@ -9,15 +10,7 @@ interface SettingsPageProps {
 
 export default async function SettingsPage({ params }: SettingsPageProps) {
   const { storeId } = await params;
-
-  const store = await prisma.store.findUnique({
-    where: { id: storeId },
-    include: { merchant: true }
-  });
-
-  if (!store) {
-    notFound();
-  }
+  const store = await getStoreWithFallback(storeId);
 
   const deliveryConfig = JSON.parse(store.deliveryConfigJson || '{}');
   const paymentConfig = JSON.parse(store.paymentConfigJson || '{}');

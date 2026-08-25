@@ -1,7 +1,8 @@
-import { prisma } from '@/lib/prisma';
-import { notFound } from 'next/navigation';
 import DashboardHeader from '../DashboardHeader';
 import PosTerminalClient from './PosTerminalClient';
+import { getStoreWithFallback } from '@/lib/get-store-fallback';
+
+export const dynamic = 'force-dynamic';
 
 interface PosPageProps {
   params: Promise<{ storeId: string }>;
@@ -9,18 +10,7 @@ interface PosPageProps {
 
 export default async function PosPage({ params }: PosPageProps) {
   const { storeId } = await params;
-
-  const store = await prisma.store.findUnique({
-    where: { id: storeId },
-    include: {
-      categories: true,
-      products: { where: { isAvailable: true } }
-    }
-  });
-
-  if (!store) {
-    notFound();
-  }
+  const store = await getStoreWithFallback(storeId);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-emerald-500">

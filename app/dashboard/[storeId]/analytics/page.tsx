@@ -1,7 +1,6 @@
-import { prisma } from '@/lib/prisma';
-import { notFound } from 'next/navigation';
 import DashboardHeader from '../DashboardHeader';
 import AnalyticsClient from './AnalyticsClient';
+import { getStoreWithFallback } from '@/lib/get-store-fallback';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,19 +10,7 @@ interface AnalyticsPageProps {
 
 export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
   const { storeId } = await params;
-
-  const store = await prisma.store.findUnique({
-    where: { id: storeId },
-    include: {
-      orders: { orderBy: { createdAt: 'desc' } },
-      products: true,
-      customers: true
-    }
-  });
-
-  if (!store) {
-    notFound();
-  }
+  const store = await getStoreWithFallback(storeId);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-emerald-500">
