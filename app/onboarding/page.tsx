@@ -154,12 +154,24 @@ function OnboardingContent() {
                   />
                 </div>
               </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">Create Admin Access Password *</label>
+                <input
+                  type="password"
+                  placeholder="Set password to access shop admin (e.g. Pass@123)"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-emerald-500 focus:outline-none"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">Use this password along with your mobile/email to log in to your merchant admin dashboard.</p>
+              </div>
             </div>
 
             <button
               onClick={() => {
-                if (!merchantName || !phone) {
-                  setError('Please provide Owner Name and Mobile number.');
+                if (!merchantName || !phone || !password) {
+                  setError('Please provide Owner Name, Mobile number, and Admin Password.');
                   return;
                 }
                 setError('');
