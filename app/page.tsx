@@ -6,15 +6,19 @@ import { prisma } from '@/lib/prisma';
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  // Fetch ONLY the 3 official pre-built demo stores for instant live preview links
-  const demoStores = await prisma.store.findMany({
-    where: {
-      slug: {
-        in: ['kirana-king', 'spicy-bites', 'glamour-salon']
-      }
-    },
-    orderBy: { createdAt: 'asc' }
-  });
+  let demoStores: any[] = [];
+  try {
+    demoStores = await prisma.store.findMany({
+      where: {
+        slug: {
+          in: ['kirana-king', 'spicy-bites', 'glamour-salon']
+        }
+      },
+      orderBy: { createdAt: 'asc' }
+    });
+  } catch (err) {
+    console.error('Error loading demo stores on Vercel:', err);
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 text-white selection:bg-emerald-500">
