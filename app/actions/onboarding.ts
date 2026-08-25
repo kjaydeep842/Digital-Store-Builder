@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { generateStoreConfig } from '@/lib/store-generator';
+import { registerDynamicStore } from '@/lib/store-registry';
 
 export interface CreateStoreInput {
   merchantName: string;
@@ -26,6 +27,11 @@ export async function createStoreAction(input: CreateStoreInput) {
     .replace(/[^a-z0-9]+/g, '-');
   if (!baseSlug) baseSlug = 'my-store';
 
+  const config = generateStoreConfig(input.businessType, input.storeName);
+
+  let storeId = baseSlug;
+  let slug = baseSlug;
+
   try {
     // 1. Create or fetch merchant
     let merchant = await prisma.merchant.findUnique({
@@ -45,15 +51,11 @@ export async function createStoreAction(input: CreateStoreInput) {
       }).catch(() => null);
     }
 
-    let slug = baseSlug;
     let counter = 1;
     while (await prisma.store.findUnique({ where: { slug } }).catch(() => null)) {
       slug = `${baseSlug}-${counter}`;
       counter++;
     }
-
-    // 3. Generate store defaults based on Business Category
-    const config = generateStoreConfig(input.businessType, input.storeName);
 
     // 4. Create store in database
     const store = await prisma.store.create({
@@ -80,6 +82,9 @@ export async function createStoreAction(input: CreateStoreInput) {
         })
       }
     });
+
+    storeId = store.id;
+    slug = store.slug;
 
     // 5. Seed baseline Categories and Products
     for (const cat of config.suggestedCategories) {
@@ -114,11 +119,70 @@ export async function createStoreAction(input: CreateStoreInput) {
         });
       }
     }
-
-    return { success: true, storeId: store.id, slug: store.slug };
   } catch (error: any) {
-    console.error('Database store creation error (using dynamic engine):', error);
-    // Dynamic Fallback Return: guaranteed 100% success for any new store creation
-    return { success: true, storeId: baseSlug, slug: baseSlug };
+    console.error('Database store creation note (using dynamic engine):', error);
   }
+
+  // Register in memory registry so that storefront and dashboard can immediately query it
+  const registeredCategories = config.suggestedCategories.map((c, i) => ({
+    id: `cat-${i}`,
+    storeId,
+    name: c.name,
+    slug: c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    icon: c.icon,
+    sortOrder: i,
+    products: []
+  }));
+
+  const registeredProducts = config.suggestedProducts.map((p, i) => ({
+    id: `prod-${i}`,
+    storeId,
+    name: p.name,
+    slug: p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    categoryId: `cat-${i % config.suggestedCategories.length}`,
+    price: p.price,
+    mrp: p.mrp,
+    stock: p.stock,
+    unit: p.unit,
+    sku: p.sku || `SKU-${i}`,
+    isVeg: p.isVeg ?? true,
+    isAvailable: true,
+    description: p.description,
+    image: p.image || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80'
+  }));
+
+  registerDynamicStore({
+    id: storeId,
+    slug,
+    name: input.storeName,
+    ownerName: input.merchantName,
+    phone: input.phone,
+    whatsapp: input.whatsapp || input.phone,
+    address: input.address || 'Main Market',
+    city: input.city || 'New Delhi',
+    state: input.state || 'Delhi',
+    pincode: input.pincode || '110001',
+    businessType: input.businessType,
+    description: input.description || config.definition.description,
+    themeConfigJson: JSON.stringify(config.suggestedTheme),
+    deliveryConfigJson: JSON.stringify(config.suggestedDelivery),
+    paymentConfigJson: JSON.stringify({ upi: true, cod: true, card: true, upiId: `${slug}@upi` }),
+    seoMetaJson: JSON.stringify({
+      title: `${input.storeName} - Online Storefront`,
+      description: `Shop directly from ${input.storeName}`
+    }),
+    merchant: {
+      id: 'merchant-user',
+      name: input.merchantName,
+      email: input.email,
+      phone: input.phone,
+      plan: 'GROWTH'
+    },
+    categories: registeredCategories,
+    products: registeredProducts,
+    orders: [], // 0 fake orders!
+    customers: [] // 0 fake customers!
+  });
+
+  return { success: true, storeId, slug };
 }

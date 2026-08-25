@@ -1,9 +1,11 @@
 import { prisma } from '@/lib/prisma';
 import { generateStoreConfig } from '@/lib/store-generator';
+import { getRegisteredDynamicStore } from '@/lib/store-registry';
 
 export async function getStoreWithFallback(storeIdOrSlug: string) {
   let store: any = null;
 
+  // 1. First: Check Prisma database
   try {
     store = await prisma.store.findFirst({
       where: {
@@ -29,15 +31,16 @@ export async function getStoreWithFallback(storeIdOrSlug: string) {
       }
     });
   } catch (err) {
-    console.error('Error fetching store from database:', err);
+    console.error('Error querying database:', err);
   }
 
-  // If store exists in DB, return the real customer-created shop!
   if (store) return store;
 
-  // Otherwise, check if identifier is a raw UUID or a custom slug
-  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/i.test(storeIdOrSlug);
+  // 2. Second: Check dynamic memory registry
+  const memoryStore = getRegisteredDynamicStore(storeIdOrSlug);
+  if (memoryStore) return memoryStore;
 
+  // 3. Third: Dynamically generate store based on requested slug/ID without fake static names
   const lowerKey = storeIdOrSlug.toLowerCase();
   let categoryKey = 'Grocery / Kirana';
 
@@ -46,20 +49,25 @@ export async function getStoreWithFallback(storeIdOrSlug: string) {
     lowerKey.includes('food') ||
     lowerKey.includes('bites') ||
     lowerKey.includes('kitchen') ||
-    lowerKey.includes('restaurant')
+    lowerKey.includes('restaurant') ||
+    lowerKey.includes('pizza') ||
+    lowerKey.includes('burger')
   ) {
     categoryKey = 'Restaurant / Cafe';
   } else if (
     lowerKey.includes('salon') ||
     lowerKey.includes('spa') ||
     lowerKey.includes('beauty') ||
-    lowerKey.includes('glamour')
+    lowerKey.includes('hair') ||
+    lowerKey.includes('glamour') ||
+    lowerKey.includes('parlour')
   ) {
     categoryKey = 'Salon / Spa';
   } else if (
     lowerKey.includes('fashion') ||
     lowerKey.includes('wear') ||
-    lowerKey.includes('clothing')
+    lowerKey.includes('clothing') ||
+    lowerKey.includes('apparel')
   ) {
     categoryKey = 'Fashion & Apparel';
   } else if (
@@ -68,67 +76,59 @@ export async function getStoreWithFallback(storeIdOrSlug: string) {
     lowerKey.includes('electronics')
   ) {
     categoryKey = 'Electronics & Mobiles';
+  } else if (
+    lowerKey.includes('pharma') ||
+    lowerKey.includes('med') ||
+    lowerKey.includes('health')
+  ) {
+    categoryKey = 'Pharmacy / Medical';
   }
 
-  let formattedName = 'Kirana King Supermarket';
-  let ownerName = 'Ramesh Kumar';
-  let cleanSlug = 'kirana-king';
+  // Generate clean store name from input slug or ID
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/i.test(storeIdOrSlug);
+
+  let formattedStoreName = 'Digital Express Store';
+  let cleanSlug = 'digital-express';
 
   if (!isUuid) {
     cleanSlug = storeIdOrSlug;
-    formattedName = storeIdOrSlug
+    formattedStoreName = storeIdOrSlug
       .split('-')
       .map(w => w.charAt(0).toUpperCase() + w.slice(1))
       .join(' ');
-    ownerName = `${formattedName.split(' ')[0]} Manager`;
   } else {
-    // Map UUIDs to realistic demo shop names
-    const hash = storeIdOrSlug.charCodeAt(0) % 3;
-    if (hash === 1) {
-      formattedName = 'Spicy Bites Kitchen';
-      ownerName = 'Chef Vikrant';
-      cleanSlug = 'spicy-bites';
-      categoryKey = 'Restaurant / Cafe';
-    } else if (hash === 2) {
-      formattedName = 'Glamour Hair & Beauty Salon';
-      ownerName = 'Ananya Sharma';
-      cleanSlug = 'glamour-salon';
-      categoryKey = 'Salon / Spa';
-    } else {
-      formattedName = 'Kirana King Supermarket';
-      ownerName = 'Ramesh Kumar';
-      cleanSlug = 'kirana-king';
-      categoryKey = 'Grocery / Kirana';
-    }
+    // If raw UUID is requested, construct a clean title without fake hardcoded names
+    formattedStoreName = `Store ${storeIdOrSlug.slice(0, 8).toUpperCase()}`;
+    cleanSlug = storeIdOrSlug;
   }
 
-  const generated = generateStoreConfig(categoryKey, formattedName);
+  const generated = generateStoreConfig(categoryKey, formattedStoreName);
 
   return {
     id: storeIdOrSlug,
     slug: cleanSlug,
-    name: formattedName,
-    ownerName: ownerName,
+    name: formattedStoreName,
+    ownerName: 'Store Owner',
     phone: '9876543210',
     whatsapp: '919876543210',
-    address: 'Main Commercial Market',
+    address: 'Commercial Market',
     city: 'New Delhi',
     state: 'Delhi',
     pincode: '110001',
     businessType: categoryKey,
-    description: `Official digital storefront for ${formattedName}`,
+    description: `Official digital storefront for ${formattedStoreName}`,
     logo: null,
     merchantId: 'merchant-default',
     themeConfigJson: JSON.stringify(generated.suggestedTheme),
     deliveryConfigJson: JSON.stringify(generated.suggestedDelivery),
     paymentConfigJson: JSON.stringify({ upi: true, cod: true, card: true, upiId: `${cleanSlug}@upi` }),
     seoMetaJson: JSON.stringify({
-      title: `${formattedName} - Online Dukaan`,
-      description: `Order online from ${formattedName}`
+      title: `${formattedStoreName} - Online Store`,
+      description: `Order online from ${formattedStoreName}`
     }),
     merchant: {
-      id: 'merchant-default',
-      name: ownerName,
+      id: 'merchant-user',
+      name: 'Store Owner',
       email: `${cleanSlug}@dukaan.com`,
       phone: '9876543210',
       plan: 'GROWTH'
@@ -158,29 +158,7 @@ export async function getStoreWithFallback(storeIdOrSlug: string) {
       description: p.description,
       image: p.image || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80'
     })),
-    orders: [
-      {
-        id: 'ord-101',
-        orderNumber: 'ORD-1001',
-        customerName: 'Priyanshu Sharma',
-        customerPhone: '9876543210',
-        grandTotal: 450,
-        paymentMethod: 'UPI',
-        paymentStatus: 'PAID',
-        orderStatus: 'DELIVERED',
-        createdAt: new Date()
-      }
-    ],
-    customers: [
-      {
-        id: 'cust-1',
-        name: 'Priyanshu Sharma',
-        phone: '9876543210',
-        totalOrders: 3,
-        totalSpent: 1350,
-        segment: 'VIP MEMBER',
-        loyaltyPoints: 135
-      }
-    ]
+    orders: [], // REAL DYNAMIC: 0 fake orders!
+    customers: [] // REAL DYNAMIC: 0 fake customers!
   };
 }
