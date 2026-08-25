@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { generateStoreConfig } from '@/lib/store-generator';
+import { generateStoreConfig, BUSINESS_CATEGORIES } from '@/lib/store-generator';
 
 export async function getStoreWithFallback(storeIdOrSlug: string) {
   let store: any = null;
@@ -32,42 +32,92 @@ export async function getStoreWithFallback(storeIdOrSlug: string) {
     console.error('Error fetching store from database:', err);
   }
 
-  // If store is found, return it!
+  // If store exists in DB, return the real customer-created shop!
   if (store) return store;
 
-  // Otherwise, construct a dynamic fallback store so NO page ever 404s on Vercel!
-  const formattedName = storeIdOrSlug.startsWith('d31d') || storeIdOrSlug.includes('-')
-    ? 'My Digital Dukaan'
-    : storeIdOrSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  // Otherwise, intelligently infer business category from slug/id keywords:
+  const lowerKey = storeIdOrSlug.toLowerCase();
+  let categoryKey = 'Grocery / Kirana';
 
-  const generated = generateStoreConfig('Grocery / Kirana', formattedName);
+  if (
+    lowerKey.includes('cafe') ||
+    lowerKey.includes('food') ||
+    lowerKey.includes('bites') ||
+    lowerKey.includes('kitchen') ||
+    lowerKey.includes('restaurant') ||
+    lowerKey.includes('pizza') ||
+    lowerKey.includes('burger') ||
+    lowerKey.includes('bakery') ||
+    lowerKey.includes('dhabba')
+  ) {
+    categoryKey = 'Restaurant / Cafe';
+  } else if (
+    lowerKey.includes('salon') ||
+    lowerKey.includes('spa') ||
+    lowerKey.includes('beauty') ||
+    lowerKey.includes('hair') ||
+    lowerKey.includes('glamour') ||
+    lowerKey.includes('parlour')
+  ) {
+    categoryKey = 'Salon / Spa';
+  } else if (
+    lowerKey.includes('fashion') ||
+    lowerKey.includes('wear') ||
+    lowerKey.includes('clothing') ||
+    lowerKey.includes('boutique') ||
+    lowerKey.includes('trends') ||
+    lowerKey.includes('apparel')
+  ) {
+    categoryKey = 'Fashion & Apparel';
+  } else if (
+    lowerKey.includes('tech') ||
+    lowerKey.includes('mobile') ||
+    lowerKey.includes('electronics') ||
+    lowerKey.includes('gadget') ||
+    lowerKey.includes('computer')
+  ) {
+    categoryKey = 'Electronics & Mobiles';
+  } else if (
+    lowerKey.includes('pharma') ||
+    lowerKey.includes('med') ||
+    lowerKey.includes('health') ||
+    lowerKey.includes('chemist')
+  ) {
+    categoryKey = 'Pharmacy / Medical';
+  }
+
+  const formattedName = storeIdOrSlug.startsWith('d31d') || storeIdOrSlug.includes('-')
+    ? storeIdOrSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+    : storeIdOrSlug.charAt(0).toUpperCase() + storeIdOrSlug.slice(1);
+
+  const generated = generateStoreConfig(categoryKey, formattedName);
 
   return {
     id: storeIdOrSlug,
     slug: storeIdOrSlug,
     name: formattedName,
-    ownerName: 'Merchant Admin',
+    ownerName: 'Store Owner',
     phone: '9876543210',
     whatsapp: '919876543210',
-    address: 'Main Market Road',
+    address: 'Main Commercial Hub',
     city: 'Delhi',
     state: 'Delhi',
     pincode: '110001',
-    businessType: 'Grocery / Kirana',
-    description: `AI-Powered Digital Store for ${formattedName}`,
+    businessType: categoryKey,
+    description: `AI-Generated Dynamic Storefront for ${formattedName}`,
     logo: null,
     merchantId: 'merchant-default',
     themeConfigJson: JSON.stringify(generated.suggestedTheme),
     deliveryConfigJson: JSON.stringify(generated.suggestedDelivery),
-    paymentConfigJson: JSON.stringify({ upi: true, cod: true, card: true, upiId: 'store@upi' }),
+    paymentConfigJson: JSON.stringify({ upi: true, cod: true, card: true, upiId: `${storeIdOrSlug}@upi` }),
     seoMetaJson: JSON.stringify({
-      title: `${formattedName} - Online Dukaan`,
-      description: `Shop online at ${formattedName}`
+      title: `${formattedName} - Online Storefront`,
+      description: `Shop directly from ${formattedName}`
     }),
     merchant: {
       id: 'merchant-default',
-      name: 'Merchant Admin',
-      email: 'merchant@dukaan.com',
+      name: 'Store Owner',
+      email: 'owner@dukaan.com',
       phone: '9876543210',
       plan: 'GROWTH'
     },
@@ -100,33 +150,22 @@ export async function getStoreWithFallback(storeIdOrSlug: string) {
       {
         id: 'ord-1',
         orderNumber: 'ORD-1001',
-        customerName: 'Priyanshu Sharma',
+        customerName: 'Aarav Sharma',
         customerPhone: '9876543210',
         grandTotal: 450,
         paymentMethod: 'UPI',
         paymentStatus: 'PAID',
         orderStatus: 'DELIVERED',
         createdAt: new Date()
-      },
-      {
-        id: 'ord-2',
-        orderNumber: 'ORD-1002',
-        customerName: 'Ramesh Patel',
-        customerPhone: '9812345678',
-        grandTotal: 820,
-        paymentMethod: 'COD',
-        paymentStatus: 'PENDING',
-        orderStatus: 'PENDING',
-        createdAt: new Date()
       }
     ],
     customers: [
       {
         id: 'cust-1',
-        name: 'Priyanshu Sharma',
+        name: 'Aarav Sharma',
         phone: '9876543210',
-        totalOrders: 3,
-        totalSpent: 1450,
+        totalOrders: 2,
+        totalSpent: 900,
         segment: 'VIP MEMBER'
       }
     ]
