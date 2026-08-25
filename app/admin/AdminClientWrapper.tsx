@@ -250,9 +250,22 @@ export default function AdminClientWrapper({
                       <td className="py-3 px-4 font-bold text-white">{store.products.length}</td>
                       <td className="py-3 px-4 font-extrabold text-emerald-400">₹{rev.toLocaleString('en-IN')}</td>
                       <td className="py-3 px-4">
-                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                          {store.merchant?.plan || 'GROWTH'}
-                        </span>
+                        <select
+                          value={store.merchant?.plan || 'FREE'}
+                          onChange={async e => {
+                            const newPlan = e.target.value as 'FREE' | 'PRO' | 'ENTERPRISE';
+                            const { updateMerchantPlanAction } = await import('@/app/actions/admin-billing');
+                            const res = await updateMerchantPlanAction(store.merchantId, newPlan);
+                            if (res.success) {
+                              alert(`✅ Plan updated to ${newPlan}!`);
+                            }
+                          }}
+                          className="px-2 py-1 rounded-lg bg-slate-950 border border-slate-800 text-indigo-300 font-extrabold text-[10px] focus:outline-none cursor-pointer"
+                        >
+                          <option value="FREE">FREE STARTER (₹0)</option>
+                          <option value="PRO">PRO MERCHANT (₹499)</option>
+                          <option value="ENTERPRISE">ENTERPRISE (₹1499)</option>
+                        </select>
                       </td>
                       <td className="py-3 px-4 flex items-center gap-2">
                         <Link

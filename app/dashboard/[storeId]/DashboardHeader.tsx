@@ -22,6 +22,7 @@ export default function DashboardHeader({ store }: DashboardHeaderProps) {
     { label: 'Products', href: `/dashboard/${store.id}/products`, icon: Package },
     { label: 'Inventory', href: `/dashboard/${store.id}/inventory`, icon: Layers },
     { label: 'POS Terminal', href: `/dashboard/${store.id}/pos`, icon: Smartphone, highlight: true },
+    { label: 'ONDC Network', href: `/dashboard/${store.id}/ondc`, icon: Zap },
     { label: 'Customers CRM', href: `/dashboard/${store.id}/customers`, icon: Users },
     { label: 'QR Poster', href: `/dashboard/${store.id}/qr`, icon: QrCode },
     { label: 'WhatsApp', href: `/dashboard/${store.id}/whatsapp`, icon: MessageSquare },
@@ -48,7 +49,16 @@ export default function DashboardHeader({ store }: DashboardHeaderProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 sm:gap-6">
+          {/* Store Setup Readiness Pill */}
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs">
+            <span className="font-semibold text-slate-400">Setup Progress:</span>
+            <div className="w-20 h-2 bg-slate-800 rounded-full overflow-hidden">
+              <div className="h-full bg-emerald-400 w-[85%]" />
+            </div>
+            <span className="font-extrabold text-emerald-400">85%</span>
+          </div>
+
           <Link
             href={`/store/${store.slug}`}
             target="_blank"

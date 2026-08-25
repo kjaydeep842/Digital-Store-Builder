@@ -131,9 +131,65 @@ export const BUSINESS_CATEGORIES: Record<string, BusinessCategoryDefinition> = {
     }
   },
 
+  'bakery-cakes': {
+    id: 'bakery-cakes',
+    name: 'Bakery & Cake Shop',
+    group: 'Food',
+    description: 'Custom cake weight orders, fresh pastries, artisanal breads & eggless options.',
+    defaultCategories: [
+      { name: 'Custom Birthday Cakes', icon: '🎂' },
+      { name: 'Pastries & Slices', icon: '🍰' },
+      { name: 'Fresh Breads & Buns', icon: '🍞' },
+      { name: 'Cookies & Biscuits', icon: '🍪' },
+      { name: 'Pies & Savouries', icon: '🥐' }
+    ],
+    defaultProducts: [
+      {
+        name: 'Fresh Dutch Chocolate Truffle Cake 500g',
+        category: 'Custom Birthday Cakes',
+        price: 499,
+        mrp: 599,
+        unit: 'piece',
+        stock: 15,
+        sku: 'CAKE-TRUFFLE-500G',
+        description: 'Rich Belgian chocolate sponge layered with smooth ganache. 100% Eggless.',
+        image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=600&q=80',
+        isVeg: true,
+        attributes: { weightOptions: ['500g', '1kg', '2kg'], eggless: 'Yes' }
+      },
+      {
+        name: 'Red Velvet Pastry Slice',
+        category: 'Pastries & Slices',
+        price: 90,
+        mrp: 110,
+        unit: 'piece',
+        stock: 30,
+        sku: 'PASTRY-REDV-01',
+        description: 'Moist red velvet cake slice topped with cream cheese frosting.',
+        image: 'https://images.unsplash.com/photo-1588195538326-c5b1e9f80a1b?auto=format&fit=crop&w=600&q=80',
+        isVeg: true
+      }
+    ],
+    themeConfig: {
+      primaryColor: '#db2777', // Pink 600
+      accentColor: '#f472b6',
+      layoutType: 'menu-food-visual',
+      enableVegFilter: true,
+      bannerTitle: 'Fresh Baked Delights & Custom Cakes 🎂',
+      bannerSubtitle: 'Order 100% eggless fresh cakes & artisanal pastries for every celebration.'
+    },
+    deliveryDefaults: {
+      deliveryRadiusKm: 10,
+      deliveryFee: 40,
+      freeDeliveryAbove: 599,
+      minOrderValue: 199,
+      allowPickup: true
+    }
+  },
+
   'restaurant-cafe': {
     id: 'restaurant-cafe',
-    name: 'Restaurant / Cafe / Fast Food',
+    name: 'Restaurant / Cafe / Fast Food / Tiffin',
     group: 'Food',
     description: 'Menu-first experience with Veg/Non-Veg filters, dish customizations, & table reservation.',
     defaultCategories: [
@@ -282,6 +338,47 @@ export const BUSINESS_CATEGORIES: Record<string, BusinessCategoryDefinition> = {
     }
   },
 
+  'jewellery-cosmetics': {
+    id: 'jewellery-cosmetics',
+    name: 'Jewellery & Cosmetics',
+    group: 'Fashion',
+    description: 'High-end aesthetic catalog for ornaments, silver jewellery, & beauty products.',
+    defaultCategories: [
+      { name: 'Gold & Silver Jewellery', icon: '💍' },
+      { name: 'Fashion Accessories', icon: '✨' },
+      { name: 'Makeup & Beauty', icon: '💄' },
+      { name: 'Skincare & Perfumes', icon: '🧴' }
+    ],
+    defaultProducts: [
+      {
+        name: '925 Sterling Silver Zircon Solitaire Ring',
+        category: 'Gold & Silver Jewellery',
+        price: 1899,
+        mrp: 2999,
+        unit: 'piece',
+        stock: 10,
+        sku: 'JEWEL-RING-01',
+        description: 'Handcrafted pure sterling silver ring with sparkling cubic zircon.',
+        image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=600&q=80',
+        attributes: { metal: '925 Silver', stamp: 'Hallmarked' }
+      }
+    ],
+    themeConfig: {
+      primaryColor: '#be123c', // Rose 700
+      accentColor: '#fb7185',
+      layoutType: 'visual-catalog-grid',
+      bannerTitle: 'Exquisite Jewellery & Luxury Beauty 💖',
+      bannerSubtitle: 'Explore hallmarked silver jewellery, cosmetics & signature fragrances.'
+    },
+    deliveryDefaults: {
+      deliveryRadiusKm: 20,
+      deliveryFee: 60,
+      freeDeliveryAbove: 1499,
+      minOrderValue: 499,
+      allowPickup: true
+    }
+  },
+
   'salon-spa': {
     id: 'salon-spa',
     name: 'Salon / Spa & Beauty Services',
@@ -401,23 +498,189 @@ export const BUSINESS_CATEGORIES: Record<string, BusinessCategoryDefinition> = {
       minOrderValue: 199,
       allowPickup: true
     }
+  },
+
+  'pharmacy-healthcare': {
+    id: 'pharmacy-healthcare',
+    name: 'Pharmacy & Healthcare',
+    group: 'Health',
+    description: 'Clean medical layout for wellness products, OTC medicines, & health supplements.',
+    defaultCategories: [
+      { name: 'First Aid & Bandages', icon: '🩹' },
+      { name: 'Vitamins & Supplements', icon: '💊' },
+      { name: 'Ayurvedic & Herbal', icon: '🌿' },
+      { name: 'Baby Care & Diapers', icon: '👶' }
+    ],
+    defaultProducts: [
+      {
+        name: 'Chyawanprash 1kg Special Immunity Booster',
+        category: 'Ayurvedic & Herbal',
+        price: 375,
+        mrp: 420,
+        unit: 'box',
+        stock: 40,
+        sku: 'HEALTH-CHY-1KG',
+        description: 'Traditional Ayurvedic formulation enriched with Amla & 40+ herbs.',
+        image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=600&q=80',
+        isVeg: true
+      }
+    ],
+    themeConfig: {
+      primaryColor: '#0284c7', // Sky 600
+      accentColor: '#38bdf8',
+      layoutType: 'grid-fast-fmcg',
+      bannerTitle: 'Trusted Medicines & Health Supplies 🩺',
+      bannerSubtitle: 'Order daily health supplements, first aid, & wellness items.'
+    },
+    deliveryDefaults: {
+      deliveryRadiusKm: 5,
+      deliveryFee: 20,
+      freeDeliveryAbove: 299,
+      minOrderValue: 99,
+      allowPickup: true
+    }
+  },
+
+  'plants-nursery': {
+    id: 'plants-nursery',
+    name: 'Flower Shop & Plant Nursery',
+    group: 'Home',
+    description: 'Earthy green theme for indoor plants, garden seeds, planters, & flower bouquets.',
+    defaultCategories: [
+      { name: 'Indoor Air Purifying Plants', icon: '🪴' },
+      { name: 'Flowering Plants & Roses', icon: '🌺' },
+      { name: 'Ceramic Planters & Pots', icon: '🏺' },
+      { name: 'Seeds & Organic Fertilizers', icon: '🌱' }
+    ],
+    defaultProducts: [
+      {
+        name: 'Money Plant Golden in Self-Watering Pot',
+        category: 'Indoor Air Purifying Plants',
+        price: 299,
+        mrp: 399,
+        unit: 'piece',
+        stock: 20,
+        sku: 'PLANT-MONEY-01',
+        description: 'Low maintenance indoor plant known for bringing positivity & clean air.',
+        image: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=600&q=80',
+        attributes: { sunlight: 'Indirect Light', careLevel: 'Easy' }
+      }
+    ],
+    themeConfig: {
+      primaryColor: '#15803d', // Green 700
+      accentColor: '#22c55e',
+      layoutType: 'visual-catalog-grid',
+      bannerTitle: 'Bring Nature Home with Fresh Plants 🌿',
+      bannerSubtitle: 'Air purifying indoor plants, exotic flowers & gardening tools.'
+    },
+    deliveryDefaults: {
+      deliveryRadiusKm: 12,
+      deliveryFee: 35,
+      freeDeliveryAbove: 699,
+      minOrderValue: 199,
+      allowPickup: true
+    }
+  },
+
+  'repair-services': {
+    id: 'repair-services',
+    name: 'Repair Services / Car & Bike Service',
+    group: 'Services',
+    description: 'Service request booking interface for home repairs, mobile fixes, & vehicle servicing.',
+    defaultCategories: [
+      { name: 'Mobile & Laptop Repair', icon: '🔧' },
+      { name: 'AC & Home Appliance Service', icon: '❄️' },
+      { name: 'Two-Wheeler / Bike Service', icon: '🛵' }
+    ],
+    defaultProducts: [
+      {
+        name: 'Full Smartphone Screen Replacement',
+        category: 'Mobile & Laptop Repair',
+        price: 1499,
+        mrp: 2000,
+        unit: 'service',
+        stock: 99,
+        sku: 'REPAIR-DISP-01',
+        description: 'Original quality display replacement with 3 months doorstep warranty.',
+        image: 'https://images.unsplash.com/photo-1597733336794-12d05021d510?auto=format&fit=crop&w=600&q=80',
+        attributes: { warranty: '90 Days Warranty', duration: '1 Hour' }
+      }
+    ],
+    themeConfig: {
+      primaryColor: '#ea580c', // Orange 600
+      accentColor: '#f97316',
+      layoutType: 'service-appointment-first',
+      enableAppointments: true,
+      bannerTitle: 'Expert Doorstep Repair & Maintenance 🛠️',
+      bannerSubtitle: 'Book certified technicians for mobile, appliance, & vehicle servicing.'
+    },
+    deliveryDefaults: {
+      deliveryRadiusKm: 15,
+      deliveryFee: 50,
+      freeDeliveryAbove: 999,
+      minOrderValue: 199,
+      allowPickup: true
+    }
   }
 };
+
+/**
+ * Smart AI fallback classification for custom business categories ("Other")
+ */
+export function classifyCustomBusinessType(inputName: string): BusinessCategoryDefinition {
+  const lower = inputName.toLowerCase();
+
+  if (lower.includes('cake') || lower.includes('bakery') || lower.includes('sweets') || lower.includes('pastry')) {
+    return BUSINESS_CATEGORIES['bakery-cakes'];
+  }
+  if (lower.includes('food') || lower.includes('tiffin') || lower.includes('kitchen') || lower.includes('snack') || lower.includes('burger')) {
+    return BUSINESS_CATEGORIES['restaurant-cafe'];
+  }
+  if (lower.includes('shirt') || lower.includes('saree') || lower.includes('shoe') || lower.includes('cloth') || lower.includes('boutique')) {
+    return BUSINESS_CATEGORIES['fashion-clothing'];
+  }
+  if (lower.includes('jewel') || lower.includes('gold') || lower.includes('silver') || lower.includes('makeup') || lower.includes('beauty')) {
+    return BUSINESS_CATEGORIES['jewellery-cosmetics'];
+  }
+  if (lower.includes('salon') || lower.includes('spa') || lower.includes('parlour') || lower.includes('hair')) {
+    return BUSINESS_CATEGORIES['salon-spa'];
+  }
+  if (lower.includes('mobile') || lower.includes('phone') || lower.includes('computer') || lower.includes('laptop') || lower.includes('electronic')) {
+    return BUSINESS_CATEGORIES['electronics-mobile'];
+  }
+  if (lower.includes('med') || lower.includes('pharma') || lower.includes('doctor') || lower.includes('clinic') || lower.includes('ayurved')) {
+    return BUSINESS_CATEGORIES['pharmacy-healthcare'];
+  }
+  if (lower.includes('plant') || lower.includes('flower') || lower.includes('garden') || lower.includes('nursery') || lower.includes('seed')) {
+    return BUSINESS_CATEGORIES['plants-nursery'];
+  }
+  if (lower.includes('repair') || lower.includes('car') || lower.includes('bike') || lower.includes('service') || lower.includes('plumber')) {
+    return BUSINESS_CATEGORIES['repair-services'];
+  }
+
+  // Default fallback to FMCG Kirana layout with custom title
+  return BUSINESS_CATEGORIES['grocery-kirana'];
+}
 
 /**
  * Generate complete store configuration for any business type
  */
 export function generateStoreConfig(businessTypeName: string, customStoreName?: string) {
-  // Find matching category or fallback to grocery-kirana / general
-  const key = Object.keys(BUSINESS_CATEGORIES).find(k => 
+  let baseConfig: BusinessCategoryDefinition;
+
+  const exactKey = Object.keys(BUSINESS_CATEGORIES).find(k => 
     BUSINESS_CATEGORIES[k].name.toLowerCase().includes(businessTypeName.toLowerCase()) ||
     businessTypeName.toLowerCase().includes(k)
-  ) || 'grocery-kirana';
+  );
 
-  const baseConfig = BUSINESS_CATEGORIES[key] || BUSINESS_CATEGORIES['grocery-kirana'];
+  if (exactKey) {
+    baseConfig = BUSINESS_CATEGORIES[exactKey];
+  } else {
+    baseConfig = classifyCustomBusinessType(businessTypeName);
+  }
 
   return {
-    businessTypeKey: key,
+    businessTypeKey: baseConfig.id,
     definition: baseConfig,
     suggestedTheme: {
       ...baseConfig.themeConfig,
@@ -428,3 +691,4 @@ export function generateStoreConfig(businessTypeName: string, customStoreName?: 
     suggestedProducts: baseConfig.defaultProducts
   };
 }
+

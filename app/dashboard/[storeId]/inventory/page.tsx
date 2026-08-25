@@ -119,6 +119,33 @@ export default async function InventoryPage({ params }: InventoryPageProps) {
             </div>
           </div>
         </div>
+
+        {/* Supplier Purchase Order Reorder Card */}
+        {lowStockItems.length > 0 && (
+          <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-950/40 via-slate-900 to-slate-900 border border-amber-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <h4 className="font-extrabold text-sm text-amber-300 flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-400" />
+                <span>Low Stock Velocity Warning: {lowStockItems.length} Products Need Reordering</span>
+              </h4>
+              <p className="text-xs text-slate-400 mt-1">
+                Items requiring restock: <strong>{lowStockItems.map(p => p.name).join(', ')}</strong>
+              </p>
+            </div>
+
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(
+                `Purchase Order from ${store.name}:\n\nPlease restock the following items:\n` +
+                lowStockItems.map(p => `• ${p.name} (Current Stock: ${p.stock} ${p.unit || 'pcs'}, Reorder Qty: 50)`).join('\n')
+              )}`}
+              target="_blank"
+              rel="noreferrer"
+              className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs transition shadow-lg shrink-0 flex items-center gap-1.5"
+            >
+              <span>Generate Supplier WhatsApp PO 📲</span>
+            </a>
+          </div>
+        )}
       </main>
     </div>
   );
