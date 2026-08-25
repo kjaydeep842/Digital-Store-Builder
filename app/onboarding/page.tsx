@@ -67,7 +67,7 @@ function OnboardingContent() {
       setCreatedStore({ storeId: res.storeId, slug: res.slug });
       setStep(4);
     } else {
-      setError(res.error || 'Failed to create store. Please try again.');
+      setError((res as any).error || 'Failed to create store. Please try again.');
     }
   };
 
