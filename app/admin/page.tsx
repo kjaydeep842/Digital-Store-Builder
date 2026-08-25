@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import AdminClientWrapper from './AdminClientWrapper';
 
+export const dynamic = 'force-dynamic';
+
 export default async function SuperAdminPage() {
   const merchantsCount = await prisma.merchant.count();
   const stores = await prisma.store.findMany({

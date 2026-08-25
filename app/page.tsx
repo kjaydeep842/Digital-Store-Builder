@@ -3,6 +3,8 @@ import { Store, Zap, ShoppingBag, Utensils, Scissors, Shirt, Smartphone, ArrowRi
 import { BUSINESS_CATEGORIES } from '@/lib/store-generator';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage() {
   // Fetch ONLY the 3 official pre-built demo stores for instant live preview links
   const demoStores = await prisma.store.findMany({

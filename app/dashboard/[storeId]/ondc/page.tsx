@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import DashboardHeader from '../DashboardHeader';
 import OndcSettingsClient from './OndcSettingsClient';
 
+export const dynamic = 'force-dynamic';
+
 interface OndcPageProps {
   params: Promise<{ storeId: string }>;
 }

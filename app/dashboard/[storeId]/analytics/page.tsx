@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import DashboardHeader from '../DashboardHeader';
 import AnalyticsClient from './AnalyticsClient';
 
+export const dynamic = 'force-dynamic';
+
 interface AnalyticsPageProps {
   params: Promise<{ storeId: string }>;
 }

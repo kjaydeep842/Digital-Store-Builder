@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import StorefrontClient from './StorefrontClient';
 
+export const dynamic = 'force-dynamic';
+
 interface StorefrontPageProps {
   params: Promise<{ storeSlug: string }>;
 }
