@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ShoppingBag, Package, Smartphone, Users, QrCode, MessageSquare, Bot, Settings, Layers, ExternalLink, Zap } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
+import { LayoutDashboard, ShoppingBag, Package, Smartphone, Users, QrCode, MessageSquare, Bot, Settings, Layers, ExternalLink, Zap, LogOut } from 'lucide-react';
 
 interface DashboardHeaderProps {
   store: {
@@ -10,11 +10,21 @@ interface DashboardHeaderProps {
     name: string;
     slug: string;
     businessType: string;
+    ownerName?: string;
   };
 }
 
 export default function DashboardHeader({ store }: DashboardHeaderProps) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.removeItem('merchant_authenticated');
+    localStorage.removeItem('merchant_store_id');
+    localStorage.removeItem('merchant_store_slug');
+    localStorage.removeItem('merchant_name');
+    router.push('/login');
+  };
 
   const navItems = [
     { label: 'Overview', href: `/dashboard/${store.id}`, icon: LayoutDashboard },
@@ -49,7 +59,7 @@ export default function DashboardHeader({ store }: DashboardHeaderProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 sm:gap-6">
+        <div className="flex items-center gap-2 sm:gap-4">
           {/* Store Setup Readiness Pill */}
           <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs">
             <span className="font-semibold text-slate-400">Setup Progress:</span>
@@ -67,6 +77,15 @@ export default function DashboardHeader({ store }: DashboardHeaderProps) {
             <span>Live Storefront</span>
             <ExternalLink className="h-3.5 w-3.5" />
           </Link>
+
+          <button
+            onClick={handleLogout}
+            className="px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-xs font-bold text-red-400 border border-red-500/20 flex items-center gap-1.5 transition"
+            title="Log Out of Merchant Admin"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Logout</span>
+          </button>
         </div>
       </div>
 
