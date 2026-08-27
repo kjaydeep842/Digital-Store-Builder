@@ -129,7 +129,7 @@ export async function getStoreWithFallback(storeIdOrSlug: string) {
     merchant: {
       id: 'merchant-user',
       name: 'Store Owner',
-      email: `${cleanSlug}@dukaan.com`,
+      email: `${cleanSlug}@shopcraft.ai`,
       phone: '9876543210',
       plan: 'GROWTH'
     },

@@ -25,6 +25,8 @@ export interface UpdateSettingsInput {
   bannerTitle: string;
   primaryColor: string;
   enableVegFilter: boolean;
+  preset?: string;
+  layoutType?: string;
 }
 
 export async function updateStoreSettingsAction(input: UpdateSettingsInput) {
@@ -47,7 +49,9 @@ export async function updateStoreSettingsAction(input: UpdateSettingsInput) {
       ...existingTheme,
       bannerTitle: input.bannerTitle,
       primaryColor: input.primaryColor,
-      enableVegFilter: input.enableVegFilter
+      enableVegFilter: input.enableVegFilter,
+      preset: input.preset || existingTheme.preset,
+      layoutType: input.layoutType || existingTheme.layoutType
     };
 
     const updatedDelivery = {

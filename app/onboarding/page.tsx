@@ -49,7 +49,7 @@ function OnboardingContent() {
 
     const res = await createStoreAction({
       merchantName,
-      email: email || `${phone}@dukaan.ai`,
+      email: email || `${phone}@shopcraft.ai`,
       phone,
       whatsapp: `91${phone}`,
       password,
@@ -71,278 +71,250 @@ function OnboardingContent() {
     }
   };
 
+  const filteredCategories = categoriesList.filter(c =>
+    c.toLowerCase().includes(searchCategoryQuery.toLowerCase())
+  );
+
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between selection:bg-emerald-500">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-emerald-600 selection:text-white">
       {/* Header */}
-      <header className="border-b border-slate-800 py-4 px-6 flex items-center justify-between">
+      <header className="border-b border-slate-200 bg-white py-4 px-6 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-lg bg-emerald-500 flex items-center justify-center font-bold text-slate-950">
-            <Zap className="h-5 w-5" />
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-amber-500 flex items-center justify-center text-white font-bold shadow-md">
+            <Zap className="h-5 w-5 text-white" />
           </div>
-          <span className="font-extrabold text-lg tracking-tight text-white">Dukaan<span className="text-emerald-400">AI</span></span>
+          <span className="font-black text-lg text-slate-900">
+            ShopCraft<span className="text-emerald-600">.AI</span>
+          </span>
         </Link>
-        <span className="text-xs font-semibold text-slate-400">Merchant 1-Click Onboarding</span>
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-slate-500 hidden sm:inline">Step {step} of 4</span>
+          <Link href="/login" className="text-xs font-bold text-slate-700 hover:text-emerald-700 px-3 py-1.5 rounded-lg bg-slate-100">
+            Login
+          </Link>
+        </div>
       </header>
 
-      {/* Main Wizard Container */}
-      <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-8 flex flex-col justify-center">
-        {/* Step Progress Bar */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between text-xs font-semibold text-slate-400 mb-2">
-            <span className={step >= 1 ? 'text-emerald-400 font-bold' : ''}>1. Owner Details</span>
-            <span className={step >= 2 ? 'text-emerald-400 font-bold' : ''}>2. Store Details</span>
-            <span className={step >= 3 ? 'text-emerald-400 font-bold' : ''}>3. Business Category</span>
-            <span className={step >= 4 ? 'text-emerald-400 font-bold' : ''}>4. Ready!</span>
+      {/* Main Container */}
+      <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-8">
+        {/* Progress Bar */}
+        <div className="mb-8 space-y-2">
+          <div className="flex items-center justify-between text-xs font-extrabold text-slate-600">
+            <span className={step >= 1 ? 'text-emerald-700' : ''}>1. Business Type</span>
+            <span className={step >= 2 ? 'text-emerald-700' : ''}>2. Store Details</span>
+            <span className={step >= 3 ? 'text-emerald-700' : ''}>3. Merchant Info</span>
+            <span className={step >= 4 ? 'text-emerald-700' : ''}>4. Complete</span>
           </div>
-          <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+          <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
+              className="h-full bg-gradient-to-r from-emerald-600 to-teal-500 transition-all duration-300"
               style={{ width: `${(step / 4) * 100}%` }}
             />
           </div>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-medium">
+          <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold">
             ⚠️ {error}
           </div>
         )}
 
-        {/* STEP 1: Owner Details */}
+        {/* STEP 1: Business Category Selection */}
         {step === 1 && (
-          <div className="p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-6">
+          <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-xl space-y-6">
             <div>
-              <h2 className="text-2xl font-extrabold text-white flex items-center gap-2">
-                <User className="h-6 w-6 text-emerald-400" />
-                <span>Step 1 — Merchant Account</span>
-              </h2>
-              <p className="text-xs text-slate-400 mt-1">Enter your details to create your merchant owner account.</p>
+              <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider block mb-1">Step 1</span>
+              <h2 className="text-2xl font-black text-slate-900">Select Your Business Industry</h2>
+              <p className="text-xs text-slate-500 mt-1">ShopCraft AI will tailor your default catalog, theme, and billing options.</p>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Owner Full Name *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Ramesh Kumar"
-                  value={merchantName}
-                  onChange={e => setMerchantName(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-emerald-500 focus:outline-none"
-                />
-              </div>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search category (e.g. Fashion, Salon, Kirana, Bakery)..."
+                value={searchCategoryQuery}
+                onChange={e => setSearchCategoryQuery(e.target.value)}
+                className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-300 text-xs text-slate-900 font-semibold focus:border-emerald-600 focus:outline-none"
+              />
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Mobile / WhatsApp Number *</label>
-                  <input
-                    type="tel"
-                    placeholder="9876543210"
-                    value={phone}
-                    onChange={e => setPhone(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Email Address</label>
-                  <input
-                    type="email"
-                    placeholder="ramesh@gmail.com"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Create Admin Access Password *</label>
-                <input
-                  type="password"
-                  placeholder="Set password to access shop admin (e.g. Pass@123)"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-emerald-500 focus:outline-none"
-                />
-                <p className="text-[11px] text-slate-400 mt-1">Use this password along with your mobile/email to log in to your merchant admin dashboard.</p>
-              </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-1">
+              {filteredCategories.map(cat => {
+                const isSelected = businessType === cat;
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => {
+                      setBusinessType(cat);
+                      setError('');
+                    }}
+                    className={`p-3.5 rounded-2xl border text-xs font-bold text-left transition transform active:scale-95 flex flex-col justify-between ${
+                      isSelected
+                        ? 'bg-emerald-600 border-emerald-600 text-white shadow-md'
+                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span>{cat}</span>
+                    {isSelected && <Check className="h-4 w-4 text-white self-end mt-2" />}
+                  </button>
+                );
+              })}
             </div>
 
             <button
               onClick={() => {
-                if (!merchantName || !phone || !password) {
-                  setError('Please provide Owner Name, Mobile number, and Admin Password.');
+                if (!businessType) {
+                  setError('Please select a business category.');
                   return;
                 }
                 setError('');
                 setStep(2);
               }}
-              className="w-full py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-base transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
+              className="w-full py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm transition flex items-center justify-center gap-2 shadow-lg"
             >
-              <span>Continue to Store Details</span>
-              <ArrowRight className="h-5 w-5" />
+              <span>Next: Store Information</span>
+              <ArrowRight className="h-4 w-4" />
             </button>
           </div>
         )}
 
         {/* STEP 2: Store Details */}
         {step === 2 && (
-          <div className="p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-6">
+          <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-xl space-y-5">
             <div>
-              <h2 className="text-2xl font-extrabold text-white flex items-center gap-2">
-                <Store className="h-6 w-6 text-emerald-400" />
-                <span>Step 2 — Business Profile</span>
-              </h2>
-              <p className="text-xs text-slate-400 mt-1">Tell us about your physical shop or online brand.</p>
+              <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider block mb-1">Step 2</span>
+              <h2 className="text-2xl font-black text-slate-900">Name Your Digital Shop</h2>
+              <p className="text-xs text-slate-500 mt-1">This will appear on customer bills, WhatsApp links, and storefront headers.</p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 text-xs">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Store / Business Name *</label>
+                <label className="block font-bold text-slate-700 mb-1">Store / Business Name *</label>
                 <input
                   type="text"
-                  placeholder="e.g. Kirana King Supermarket"
+                  placeholder="e.g. Royal Fashion Hub"
                   value={storeName}
                   onChange={e => setStoreName(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-emerald-500 focus:outline-none"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 font-bold text-slate-900 focus:border-emerald-600 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Shop Address</label>
+                <label className="block font-bold text-slate-700 mb-1">Street Address</label>
                 <input
                   type="text"
-                  placeholder="Shop No 12, Main Market Road"
+                  placeholder="Shop 12, Main Market"
                   value={address}
                   onChange={e => setAddress(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-emerald-500 focus:outline-none"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 font-semibold text-slate-900 focus:border-emerald-600 focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">City</label>
+                  <label className="block font-bold text-slate-700 mb-1">City</label>
                   <input
                     type="text"
                     value={city}
                     onChange={e => setCity(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-300 font-semibold text-slate-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">State</label>
+                  <label className="block font-bold text-slate-700 mb-1">State</label>
                   <input
                     type="text"
                     value={state}
                     onChange={e => setState(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-300 font-semibold text-slate-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Pincode</label>
+                  <label className="block font-bold text-slate-700 mb-1">Pincode</label>
                   <input
                     type="text"
                     value={pincode}
                     onChange={e => setPincode(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-300 font-semibold text-slate-900"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setStep(1)}
-                className="px-5 py-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold transition"
+                className="px-5 py-4 rounded-2xl bg-slate-100 text-slate-700 font-bold text-xs hover:bg-slate-200"
               >
                 Back
               </button>
               <button
                 onClick={() => {
-                  if (!storeName) {
-                    setError('Please provide Store Name.');
+                  if (!storeName.trim()) {
+                    setError('Please enter a store name.');
                     return;
                   }
                   setError('');
                   setStep(3);
                 }}
-                className="flex-1 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-base transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
+                className="flex-1 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs transition flex items-center justify-center gap-2 shadow-lg"
               >
-                <span>Select Business Category</span>
-                <ArrowRight className="h-5 w-5" />
+                <span>Next: Owner Credentials</span>
+                <ArrowRight className="h-4 w-4" />
               </button>
             </div>
           </div>
         )}
 
-        {/* STEP 3: Business Type Category */}
+        {/* STEP 3: Merchant Credentials & Launch */}
         {step === 3 && (
-          <div className="p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-6">
+          <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-xl space-y-5">
             <div>
-              <h2 className="text-2xl font-extrabold text-white flex items-center gap-2">
-                <Building2 className="h-6 w-6 text-emerald-400" />
-                <span>Step 3 — Select Business Type</span>
-              </h2>
-              <p className="text-xs text-slate-400 mt-1">Our AI will automatically generate products, categories & theme layout tailored for your business.</p>
+              <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider block mb-1">Step 3</span>
+              <h2 className="text-2xl font-black text-slate-900">Merchant Account Credentials</h2>
+              <p className="text-xs text-slate-500 mt-1">Set up your admin access details to manage orders and POS billing.</p>
             </div>
 
-            {/* Search Input */}
-            <input
-              type="text"
-              placeholder="Search category (e.g. Kirana, Restaurant, Fashion, Salon, Electronics...)"
-              value={searchCategoryQuery}
-              onChange={e => setSearchCategoryQuery(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-emerald-500 focus:outline-none"
-            />
-
-            {/* Category Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-64 overflow-y-auto pr-1">
-              {categoriesList
-                .filter(cat => cat.toLowerCase().includes(searchCategoryQuery.toLowerCase()))
-                .map(cat => (
-                  <button
-                    key={cat}
-                    onClick={() => setBusinessType(cat)}
-                    className={`p-3 rounded-xl border text-left text-xs font-semibold transition flex items-center justify-between ${
-                      businessType === cat
-                        ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300'
-                        : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
-                    }`}
-                  >
-                    <span>{cat}</span>
-                    {businessType === cat && <Check className="h-4 w-4 text-emerald-400" />}
-                  </button>
-                ))}
-              <button
-                onClick={() => setBusinessType('Other')}
-                className={`p-3 rounded-xl border text-left text-xs font-semibold transition flex items-center justify-between ${
-                  businessType === 'Other'
-                    ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300'
-                    : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
-                }`}
-              >
-                <span>Other (AI Custom)</span>
-                {businessType === 'Other' && <Check className="h-4 w-4 text-emerald-400" />}
-              </button>
-            </div>
-
-            {businessType === 'Other' && (
+            <div className="space-y-4 text-xs">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Specify Your Business Category</label>
+                <label className="block font-bold text-slate-700 mb-1">Owner Full Name *</label>
                 <input
                   type="text"
-                  placeholder="e.g. Organic Seed Nursery, Ayurvedic Medicines..."
-                  value={customBusinessType}
-                  onChange={e => setCustomBusinessType(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:border-emerald-500 focus:outline-none"
+                  placeholder="e.g. Vikram Sharma"
+                  value={merchantName}
+                  onChange={e => setMerchantName(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 font-bold text-slate-900 focus:border-emerald-600 focus:outline-none"
                 />
               </div>
-            )}
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">10-Digit Mobile / WhatsApp Number *</label>
+                <input
+                  type="tel"
+                  placeholder="9876543210"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 font-bold text-slate-900 focus:border-emerald-600 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Dashboard Password *</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 font-bold text-slate-900 focus:border-emerald-600 focus:outline-none"
+                />
+              </div>
+            </div>
 
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setStep(2)}
-                className="px-5 py-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold transition"
+                className="px-5 py-4 rounded-2xl bg-slate-100 text-slate-700 font-bold text-xs hover:bg-slate-200"
               >
                 Back
               </button>
@@ -350,12 +322,12 @@ function OnboardingContent() {
               <button
                 onClick={handleGenerateStore}
                 disabled={loading}
-                className="flex-1 py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-extrabold text-base transition flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/25 disabled:opacity-50"
+                className="flex-1 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-base transition flex items-center justify-center gap-2 shadow-xl disabled:opacity-50"
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <Sparkles className="h-5 w-5 animate-spin" />
-                    <span>AI Engine Generating Store...</span>
+                    <span>Generating Store & Theme Preset...</span>
                   </span>
                 ) : (
                   <>
@@ -370,73 +342,71 @@ function OnboardingContent() {
 
         {/* STEP 4: Store Created & Actionable Wizard Checklist */}
         {step === 4 && createdStore && (
-          <div className="p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-6 text-center">
-            <div className="inline-flex h-16 w-16 rounded-full bg-emerald-500/20 text-emerald-400 items-center justify-center border border-emerald-500/30">
+          <div className="p-8 rounded-3xl bg-white border border-slate-200 shadow-xl space-y-6 text-center">
+            <div className="inline-flex h-16 w-16 rounded-full bg-emerald-100 text-emerald-600 items-center justify-center border border-emerald-300">
               <Check className="h-8 w-8" />
             </div>
 
             <div>
-              <h2 className="text-3xl font-extrabold text-white">Your Store is Live! 🎉</h2>
-              <p className="text-sm text-slate-300 mt-1">
-                Store URL: <strong className="text-emerald-400">https://{createdStore.slug}.platform-domain.com</strong>
+              <h2 className="text-3xl font-black text-slate-900">Your Store is Live! 🎉</h2>
+              <p className="text-sm text-slate-600 mt-1">
+                Store Slug: <strong className="text-emerald-700 font-bold">/{createdStore.slug}</strong>
               </p>
             </div>
 
-            {/* Store Setup Completion percentage card */}
-            <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 text-left space-y-3">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 text-left space-y-3">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-700">
                 <span>Store Readiness Setup</span>
-                <span className="text-emerald-400 font-extrabold text-sm">85% Complete</span>
+                <span className="text-emerald-600 font-extrabold text-sm">85% Complete</span>
               </div>
-              <div className="h-3 w-full bg-slate-900 rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-500 w-[85%]" />
+              <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden">
+                <div className="h-full bg-emerald-600 w-[85%]" />
               </div>
-              <p className="text-[11px] text-slate-400">AI has generated your initial catalog, theme config, checkout, and delivery defaults!</p>
+              <p className="text-[11px] text-slate-500">AI generated initial catalog, delivery defaults & dynamic store theme preset!</p>
             </div>
 
-            {/* Quick Setup Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
               <Link
                 href={`/store/${createdStore.slug}`}
-                className="p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-emerald-500 transition group"
+                className="p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:border-emerald-600 transition group"
               >
-                <ShoppingBag className="h-5 w-5 text-emerald-400 mb-2 group-hover:scale-110 transition" />
-                <span className="font-bold text-xs text-white block">Preview Store</span>
-                <span className="text-[10px] text-slate-400">View customer store</span>
+                <ShoppingBag className="h-5 w-5 text-emerald-600 mb-2 group-hover:scale-110 transition" />
+                <span className="font-bold text-xs text-slate-900 block">Preview Store</span>
+                <span className="text-[10px] text-slate-500">View customer store</span>
               </Link>
 
               <Link
                 href={`/dashboard/${createdStore.storeId}`}
-                className="p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-indigo-500 transition group"
+                className="p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:border-teal-600 transition group"
               >
-                <Store className="h-5 w-5 text-indigo-400 mb-2 group-hover:scale-110 transition" />
-                <span className="font-bold text-xs text-white block">Dashboard OS</span>
-                <span className="text-[10px] text-slate-400">Manage products & sales</span>
+                <Store className="h-5 w-5 text-teal-600 mb-2 group-hover:scale-110 transition" />
+                <span className="font-bold text-xs text-slate-900 block">Dashboard OS</span>
+                <span className="text-[10px] text-slate-500">Manage products & sales</span>
               </Link>
 
               <Link
                 href={`/dashboard/${createdStore.storeId}/pos`}
-                className="p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500 transition group"
+                className="p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:border-amber-600 transition group"
               >
-                <Smartphone className="h-5 w-5 text-amber-400 mb-2 group-hover:scale-110 transition" />
-                <span className="font-bold text-xs text-white block">POS Terminal</span>
-                <span className="text-[10px] text-slate-400">Offline billing terminal</span>
+                <Smartphone className="h-5 w-5 text-amber-600 mb-2 group-hover:scale-110 transition" />
+                <span className="font-bold text-xs text-slate-900 block">POS Terminal</span>
+                <span className="text-[10px] text-slate-500">Offline billing terminal</span>
               </Link>
 
               <Link
                 href={`/dashboard/${createdStore.storeId}/qr`}
-                className="p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-teal-500 transition group"
+                className="p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:border-emerald-600 transition group"
               >
-                <QrCode className="h-5 w-5 text-teal-400 mb-2 group-hover:scale-110 transition" />
-                <span className="font-bold text-xs text-white block">QR Posters</span>
-                <span className="text-[10px] text-slate-400">Print storefront QR</span>
+                <QrCode className="h-5 w-5 text-emerald-600 mb-2 group-hover:scale-110 transition" />
+                <span className="font-bold text-xs text-slate-900 block">QR Posters</span>
+                <span className="text-[10px] text-slate-500">Print storefront QR</span>
               </Link>
             </div>
 
             <div className="pt-4 flex flex-col sm:flex-row gap-3">
               <Link
                 href={`/dashboard/${createdStore.storeId}`}
-                className="flex-1 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-base transition text-center shadow-lg shadow-emerald-500/20"
+                className="flex-1 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-base transition text-center shadow-lg"
               >
                 Go to Merchant Dashboard 🚀
               </Link>
@@ -446,8 +416,8 @@ function OnboardingContent() {
       </main>
 
       {/* Footer */}
-      <footer className="py-4 text-center text-xs text-slate-500 border-t border-slate-900">
-        Need assistance? Our AI assistant will guide you step-by-step in your merchant dashboard.
+      <footer className="py-4 text-center text-xs text-slate-500 border-t border-slate-200 bg-white">
+        ShopCraft AI Merchant Onboarding • Automated Multi-Tenant Engine
       </footer>
     </div>
   );
@@ -455,7 +425,7 @@ function OnboardingContent() {
 
 export default function OnboardingPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-white font-bold">Loading Store Builder...</div>}>
+    <Suspense fallback={<div className="p-8 text-center text-slate-700 font-bold">Loading Store Builder...</div>}>
       <OnboardingContent />
     </Suspense>
   );

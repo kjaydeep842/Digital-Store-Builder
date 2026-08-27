@@ -1,8 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { prisma } from '@/lib/prisma';
 import StorefrontClient from './StorefrontClient';
-import { getRegisteredDynamicStore } from '@/lib/store-registry';
+import { getStoreWithFallback } from '@/lib/get-store-fallback';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,17 +11,7 @@ interface StorefrontPageProps {
 
 export async function generateMetadata({ params }: StorefrontPageProps): Promise<Metadata> {
   const { storeSlug } = await params;
-  let store: any = null;
-  
-  try {
-    store = await prisma.store.findFirst({
-      where: { OR: [{ slug: storeSlug }, { id: storeSlug }] }
-    });
-  } catch (e) {}
-
-  if (!store) {
-    store = getRegisteredDynamicStore(storeSlug);
-  }
+  const store = await getStoreWithFallback(storeSlug);
 
   const storeTitle = store?.name || 'Digital Storefront';
 
@@ -40,42 +29,18 @@ export async function generateMetadata({ params }: StorefrontPageProps): Promise
 export default async function StorefrontPage({ params }: StorefrontPageProps) {
   const { storeSlug } = await params;
 
-  let store: any = null;
+  // Dynamically load store from DB, Memory Registry, or Generator Engine (NO 404s!)
+  const store = await getStoreWithFallback(storeSlug);
 
-  // 1. Check Prisma DB
-  try {
-    store = await prisma.store.findFirst({
-      where: { OR: [{ slug: storeSlug }, { id: storeSlug }] },
-      include: {
-        categories: {
-          orderBy: { sortOrder: 'asc' },
-          include: { products: true }
-        },
-        products: {
-          where: { isAvailable: true },
-          orderBy: { createdAt: 'desc' }
-        }
-      }
-    });
-  } catch (err) {
-    console.error('Database query error in StorefrontPage:', err);
-  }
-
-  // 2. Check Dynamic Memory Store Registry (for fresh stores created during session)
-  if (!store) {
-    store = getRegisteredDynamicStore(storeSlug);
-  }
-
-  // 3. STRICT 404: If store is not created by a merchant, show 404 NOT FOUND immediately!
   if (!store) {
     notFound();
   }
 
   // Parse JSON configs safely
-  const themeConfig = JSON.parse(store.themeConfigJson || '{}');
-  const deliveryConfig = JSON.parse(store.deliveryConfigJson || '{}');
-  const paymentConfig = JSON.parse(store.paymentConfigJson || '{}');
-  const seoMeta = JSON.parse(store.seoMetaJson || '{}');
+  const themeConfig = typeof store.themeConfigJson === 'string' ? JSON.parse(store.themeConfigJson || '{}') : (store.themeConfigJson || {});
+  const deliveryConfig = typeof store.deliveryConfigJson === 'string' ? JSON.parse(store.deliveryConfigJson || '{}') : (store.deliveryConfigJson || {});
+  const paymentConfig = typeof store.paymentConfigJson === 'string' ? JSON.parse(store.paymentConfigJson || '{}') : (store.paymentConfigJson || {});
+  const seoMeta = typeof store.seoMetaJson === 'string' ? JSON.parse(store.seoMetaJson || '{}') : (store.seoMetaJson || {});
 
   // Schema.org LocalBusiness JSON-LD
   const jsonLd = {
@@ -92,7 +57,7 @@ export default async function StorefrontPage({ params }: StorefrontPageProps) {
       postalCode: store.pincode,
       addressCountry: 'IN'
     },
-    url: `https://${store.slug}.dukaan.in`
+    url: `https://${store.slug}.shopcraft.ai`
   };
 
   return (
