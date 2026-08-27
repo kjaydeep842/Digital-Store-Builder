@@ -198,27 +198,38 @@ export async function parseImageCatalogAction(storeId: string, imageUrl: string)
   try {
     // Simulated AI Vision catalog extraction based on image & business context
     const store = await prisma.store.findUnique({ where: { id: storeId } });
-    const isFood = store?.businessType.toLowerCase().includes('restaurant') || store?.businessType.toLowerCase().includes('cafe');
-    const isFashion = store?.businessType.toLowerCase().includes('fashion');
+    const bType = (store?.businessType || '').toLowerCase();
+    const isFood = bType.includes('restaurant') || bType.includes('cafe') || bType.includes('bistro') || bType.includes('food');
+    const isFashion = bType.includes('fashion') || bType.includes('apparel') || bType.includes('boutique') || bType.includes('clothing');
+    const isElectronics = bType.includes('electronic') || bType.includes('tech') || bType.includes('mobile');
 
     let draftProducts: ProductInput[] = [];
 
     if (isFood) {
       draftProducts = [
-        { name: 'Special Combo Platter', price: 299, mrp: 350, stock: 999, unit: 'portion', isVeg: true, description: 'AI detected dish from shelf photo' },
-        { name: 'Crispy Veg Spring Rolls', price: 180, mrp: 210, stock: 999, unit: 'portion', isVeg: true, description: 'AI detected starter' }
+        { name: 'Special Cheese Butter Paneer Dosa', price: 180, mrp: 210, stock: 100, unit: 'portion', isVeg: true, description: 'AI extracted dish from menu photo scan' },
+        { name: 'Cold Coffee with Ice Cream', price: 120, mrp: 140, stock: 100, unit: 'portion', isVeg: true, description: 'AI extracted beverage item' }
       ];
     } else if (isFashion) {
       draftProducts = [
-        { name: 'Designer Cotton Printed Kurti', price: 799, mrp: 1299, stock: 15, unit: 'piece', description: 'AI detected garment item' },
-        { name: 'Casual Denim Jeans (Blue)', price: 1199, mrp: 1899, stock: 20, unit: 'piece', description: 'AI detected apparel item' }
+        { name: 'Designer Floral Print Anarkali Kurti', price: 899, mrp: 1499, stock: 12, unit: 'piece', description: 'AI extracted from garment tag scan' },
+        { name: 'Slim Fit Cotton Casual Shirt', price: 699, mrp: 1199, stock: 20, unit: 'piece', description: 'AI extracted apparel item' }
+      ];
+    } else if (isElectronics) {
+      draftProducts = [
+        { name: 'Wireless Bluetooth Earbuds Pro', price: 1299, mrp: 2499, stock: 15, unit: 'piece', description: 'AI extracted electronics item' },
+        { name: 'Fast Charging Power Bank 10000mAh', price: 899, mrp: 1499, stock: 25, unit: 'piece', description: 'AI extracted accessory' }
       ];
     } else {
       draftProducts = [
-        { name: 'Haldiram Bhujia Sev 400g', price: 110, mrp: 120, stock: 35, unit: 'packet', isVeg: true, description: 'AI detected FMCG snack' },
-        { name: 'Nestle Everyday Milk Powder 200g', price: 135, mrp: 145, stock: 25, unit: 'packet', isVeg: true, description: 'AI detected grocery item' },
-        { name: 'Cadbury Dairy Milk Silk 150g', price: 175, mrp: 180, stock: 40, unit: 'piece', isVeg: true, description: 'AI detected confectionery item' }
+        { name: 'Amul Taaza Toned Milk 1L', price: 54, mrp: 54, stock: 40, unit: 'packet', isVeg: true, description: 'AI extracted dairy product from shelf scan' },
+        { name: 'Fortune Sunlite Sunflower Oil 1L', price: 145, mrp: 160, stock: 25, unit: 'pouch', isVeg: true, description: 'AI extracted grocery pouch' },
+        { name: 'Britannia Good Day Butter Biscuits 200g', price: 35, mrp: 40, stock: 50, unit: 'packet', isVeg: true, description: 'AI extracted snack item' }
       ];
+    }
+
+    if (imageUrl) {
+      draftProducts = draftProducts.map(p => ({ ...p, image: imageUrl }));
     }
 
     // Log AI action
@@ -226,7 +237,7 @@ export async function parseImageCatalogAction(storeId: string, imageUrl: string)
       data: {
         storeId,
         action: 'IMAGE_SCAN',
-        prompt: imageUrl,
+        prompt: imageUrl.length > 100 ? 'Data_URL_Image_Scan' : imageUrl,
         result: JSON.stringify(draftProducts)
       }
     });

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, Mic, Image as ImageIcon, Barcode, FileSpreadsheet, Search, Check, Sparkles, AlertCircle, X, Trash2, Edit, Package } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Plus, Mic, Image as ImageIcon, Barcode, FileSpreadsheet, Search, Check, Sparkles, AlertCircle, X, Trash2, Edit3, Package, Camera, Upload, RefreshCw, Video, VideoOff, FileUp, CheckCircle2 } from 'lucide-react';
 import Papa from 'papaparse';
 import { createProductAction, bulkImportProductsAction, parseVoiceProductAction, parseImageCatalogAction, ProductInput } from '@/app/actions/products';
 
@@ -33,14 +33,95 @@ export default function ProductManagerClient({ store }: ProductManagerClientProp
   // Method C — Barcode State
   const [scannedBarcode, setScannedBarcode] = useState('');
 
-  // Method D — Image AI Draft Proposals State
+  // Method D — Image AI State (Upload vs Camera)
+  const [imageInputMode, setImageInputMode] = useState<'UPLOAD' | 'CAMERA' | 'URL'>('UPLOAD');
   const [imageUrl, setImageUrl] = useState('https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [draftProducts, setDraftProducts] = useState<ProductInput[]>([]);
+
+  // Camera stream refs & states
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
 
   // Method E — Voice AI State
   const [isListening, setIsListening] = useState(false);
   const [voiceText, setVoiceText] = useState('');
   const [voiceDraft, setVoiceDraft] = useState<ProductInput | null>(null);
+
+  // Cleanup camera stream when tab changes or unmounts
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setIsCameraActive(false);
+  };
+
+  const startCamera = async () => {
+    setCameraError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } }
+      });
+      streamRef.current = stream;
+      setIsCameraActive(true);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err: any) {
+      console.error('Camera access error:', err);
+      setCameraError('Unable to access camera. Please allow camera permissions or upload an image file from your device gallery.');
+      setIsCameraActive(false);
+    }
+  };
+
+  // Attach stream to video element when videoRef becomes ready
+  useEffect(() => {
+    if (isCameraActive && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+    }
+  }, [isCameraActive]);
+
+  const captureCameraPhoto = () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      setPreviewImage(dataUrl);
+      setImageUrl(dataUrl);
+      stopCamera();
+      // Auto run AI vision scan on captured photo
+      handleScanImageAi(dataUrl);
+    }
+  };
+
+  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        setPreviewImage(dataUrl);
+        setImageUrl(dataUrl);
+        // Auto run AI vision scan on uploaded photo
+        handleScanImageAi(dataUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Filter products
   const filteredProducts = store.products.filter((p: any) =>
@@ -120,9 +201,14 @@ export default function ProductManagerClient({ store }: ProductManagerClientProp
   };
 
   // Method D — Image AI Draft Analysis
-  const handleScanImageAi = async () => {
+  const handleScanImageAi = async (overrideImg?: string) => {
+    const targetImg = overrideImg || imageUrl;
+    if (!targetImg) {
+      alert('Please select an image file or take a camera snapshot first.');
+      return;
+    }
     setLoading(true);
-    const res = await parseImageCatalogAction(store.id, imageUrl);
+    const res = await parseImageCatalogAction(store.id, targetImg);
     setLoading(false);
     if (res.success && res.draftProducts) {
       setDraftProducts(res.draftProducts);
@@ -135,7 +221,21 @@ export default function ProductManagerClient({ store }: ProductManagerClientProp
     setLoading(false);
     if (res.success) {
       setDraftProducts(prev => prev.filter(p => p.name !== draft.name));
-      setMessage(`✅ Approved & Published "${draft.name}" to store!`);
+      setMessage(`✅ Approved & Published "${draft.name}" to store catalog!`);
+    } else {
+      alert(res.error || 'Failed to approve item.');
+    }
+  };
+
+  const handleApproveAllDrafts = async () => {
+    if (draftProducts.length === 0) return;
+    setLoading(true);
+    const res = await bulkImportProductsAction(store.id, draftProducts);
+    setLoading(false);
+    if (res.success) {
+      setMessage(`✅ Approved and published all ${res.createdCount} draft products to store catalog!`);
+      setDraftProducts([]);
+      setActiveTab('CATALOG');
     }
   };
 
@@ -177,7 +277,7 @@ export default function ProductManagerClient({ store }: ProductManagerClientProp
   };
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 font-sans">
       {/* Top Header & AI Import Method Selector Tabs */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
         <div>
@@ -193,53 +293,53 @@ export default function ProductManagerClient({ store }: ProductManagerClientProp
         {/* 5 Import Method Buttons */}
         <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
           <button
-            onClick={() => setActiveTab('CATALOG')}
+            onClick={() => { stopCamera(); setActiveTab('CATALOG'); }}
             className={`px-3.5 py-2 rounded-xl transition ${
-              activeTab === 'CATALOG' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              activeTab === 'CATALOG' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             Catalog View
           </button>
           <button
-            onClick={() => setActiveTab('MANUAL')}
+            onClick={() => { stopCamera(); setActiveTab('MANUAL'); }}
             className={`px-3.5 py-2 rounded-xl flex items-center gap-1 transition ${
-              activeTab === 'MANUAL' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              activeTab === 'MANUAL' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             <Plus className="h-4 w-4" />
             <span>Manual</span>
           </button>
           <button
-            onClick={() => setActiveTab('CSV')}
+            onClick={() => { stopCamera(); setActiveTab('CSV'); }}
             className={`px-3.5 py-2 rounded-xl flex items-center gap-1 transition ${
-              activeTab === 'CSV' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              activeTab === 'CSV' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
             <span>CSV Import</span>
           </button>
           <button
-            onClick={() => setActiveTab('BARCODE')}
+            onClick={() => { stopCamera(); setActiveTab('BARCODE'); }}
             className={`px-3.5 py-2 rounded-xl flex items-center gap-1 transition ${
-              activeTab === 'BARCODE' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              activeTab === 'BARCODE' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             <Barcode className="h-4 w-4 text-indigo-600" />
             <span>Barcode</span>
           </button>
           <button
-            onClick={() => setActiveTab('IMAGE_AI')}
+            onClick={() => { setActiveTab('IMAGE_AI'); }}
             className={`px-3.5 py-2 rounded-xl flex items-center gap-1 transition ${
-              activeTab === 'IMAGE_AI' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              activeTab === 'IMAGE_AI' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             <ImageIcon className="h-4 w-4 text-teal-600" />
             <span>Image AI Draft</span>
           </button>
           <button
-            onClick={() => setActiveTab('VOICE_AI')}
+            onClick={() => { stopCamera(); setActiveTab('VOICE_AI'); }}
             className={`px-3.5 py-2 rounded-xl flex items-center gap-1 transition ${
-              activeTab === 'VOICE_AI' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              activeTab === 'VOICE_AI' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             <Mic className="h-4 w-4 text-amber-600" />
@@ -249,7 +349,7 @@ export default function ProductManagerClient({ store }: ProductManagerClientProp
       </div>
 
       {message && (
-        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-semibold flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-semibold flex items-center justify-between shadow-xs">
           <span>{message}</span>
           <button onClick={() => setMessage('')}><X className="h-4 w-4" /></button>
         </div>
@@ -285,7 +385,7 @@ export default function ProductManagerClient({ store }: ProductManagerClientProp
                 {filteredProducts.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-slate-500 text-xs font-semibold">
-                      No products added yet. Click <strong>Manual</strong> or <strong>CSV Import</strong> above to add items to your store catalog.
+                      No products added yet. Click <strong>Manual</strong>, <strong>CSV Import</strong>, or <strong>Image AI Draft</strong> above to add items to your store catalog.
                     </td>
                   </tr>
                 ) : (
@@ -299,10 +399,10 @@ export default function ProductManagerClient({ store }: ProductManagerClientProp
                         </div>
                       </td>
                       <td className="py-3 px-4 font-bold text-slate-900">
-                        ₹{p.price} {p.mrp > p.price && <span className="text-[10px] text-slate-400 line-through">₹{p.mrp}</span>}
+                        ₹{p.price} {p.mrp > p.price && <span className="text-[10px] text-slate-400 line-through ml-1">₹{p.mrp}</span>}
                       </td>
                       <td className="py-3 px-4">
-                        <span className={`font-bold ${p.stock <= 5 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                        <span className={`font-bold ${p.stock <= 5 ? 'text-amber-600' : 'text-emerald-700'}`}>
                           {p.stock}
                         </span>
                       </td>
@@ -449,7 +549,7 @@ export default function ProductManagerClient({ store }: ProductManagerClientProp
           <div>
             <Barcode className="h-10 w-10 text-indigo-600 mx-auto mb-2" />
             <h3 className="text-xl font-extrabold text-slate-900">Method C — Barcode Scanner & Lookup</h3>
-            <p className="text-xs text-slate-500 mt-1">Scan physical barcode using USB scanner or camera to auto-fill FMCG details.</p>
+            <p className="text-xs text-slate-500 mt-1">Scan physical barcode using USB scanner or device camera to auto-fill FMCG details.</p>
           </div>
 
           <div className="max-w-md mx-auto space-y-3">
@@ -468,7 +568,7 @@ export default function ProductManagerClient({ store }: ProductManagerClientProp
                 setBarcodeInput(scannedBarcode);
                 setActiveTab('MANUAL');
               }}
-              className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs transition shadow-sm"
+              className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs transition shadow-xs"
             >
               Lookup & Add Scanned Item
             </button>
@@ -476,7 +576,7 @@ export default function ProductManagerClient({ store }: ProductManagerClientProp
         </div>
       )}
 
-      {/* TAB 5: Method D — Image AI Catalog Drafter */}
+      {/* TAB 5: Method D — Image AI Catalog Drafter with File Upload & Live Camera Scan */}
       {activeTab === 'IMAGE_AI' && (
         <div className="p-8 rounded-3xl bg-white border border-slate-200 max-w-3xl space-y-6 shadow-sm">
           <div>
@@ -485,45 +585,280 @@ export default function ProductManagerClient({ store }: ProductManagerClientProp
               <span>Method D — Image AI Catalog Drafter</span>
             </h3>
             <p className="text-xs text-slate-500 mt-1">
-              Upload shelf or product photo. AI extracts draft items requiring your approval before publishing to storefront.
+              Upload product/shelf photo or use live camera scanner. AI extracts items requiring your approval before publishing.
             </p>
           </div>
 
-          <div className="flex gap-3">
-            <input
-              type="text"
-              placeholder="Image URL or upload path..."
-              value={imageUrl}
-              onChange={e => setImageUrl(e.target.value)}
-              className="flex-1 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:border-teal-600 focus:outline-none"
-            />
+          {/* Mode Switcher Buttons */}
+          <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-100 border border-slate-200 w-fit text-xs font-bold">
             <button
-              onClick={handleScanImageAi}
-              disabled={loading}
-              className="px-6 py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-sm"
+              onClick={() => { stopCamera(); setImageInputMode('UPLOAD'); }}
+              className={`px-4 py-2 rounded-xl flex items-center gap-1.5 transition ${
+                imageInputMode === 'UPLOAD' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
             >
-              <Sparkles className="h-4 w-4" />
-              <span>Run AI Vision Draft</span>
+              <Upload className="h-4 w-4 text-emerald-600" />
+              <span>Upload Image File</span>
+            </button>
+
+            <button
+              onClick={() => { setImageInputMode('CAMERA'); startCamera(); }}
+              className={`px-4 py-2 rounded-xl flex items-center gap-1.5 transition ${
+                imageInputMode === 'CAMERA' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Camera className="h-4 w-4 text-teal-600" />
+              <span>Live Camera Scanner</span>
+            </button>
+
+            <button
+              onClick={() => { stopCamera(); setImageInputMode('URL'); }}
+              className={`px-4 py-2 rounded-xl flex items-center gap-1.5 transition ${
+                imageInputMode === 'URL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <FileUp className="h-4 w-4 text-indigo-600" />
+              <span>Image URL</span>
             </button>
           </div>
 
+          {/* Option 1: File Upload Zone */}
+          {imageInputMode === 'UPLOAD' && (
+            <div className="space-y-4">
+              <div className="p-8 border-2 border-dashed border-teal-300 rounded-3xl text-center bg-teal-50/50 hover:bg-teal-50 transition relative">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageFileUpload}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  id="product-image-upload"
+                />
+                <div className="space-y-2 pointer-events-none">
+                  <div className="h-12 w-12 rounded-2xl bg-teal-100 text-teal-700 flex items-center justify-center mx-auto font-bold">
+                    <Upload className="h-6 w-6" />
+                  </div>
+                  <span className="font-extrabold text-sm text-slate-900 block">
+                    Click or Drag & Drop Product / Shelf Photo Here
+                  </span>
+                  <span className="text-xs text-slate-500 block">
+                    Supports JPG, PNG, WEBP from your computer or phone gallery
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Option 2: Live Camera Viewfinder */}
+          {imageInputMode === 'CAMERA' && (
+            <div className="space-y-4">
+              {cameraError ? (
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold flex items-center justify-between">
+                  <span>{cameraError}</span>
+                  <button
+                    onClick={startCamera}
+                    className="px-3 py-1 rounded-lg bg-amber-600 text-white font-bold flex items-center gap-1 hover:bg-amber-700"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" /> Try Again
+                  </button>
+                </div>
+              ) : (
+                <div className="relative rounded-3xl overflow-hidden border-2 border-teal-500 bg-slate-900 shadow-lg text-center">
+                  {isCameraActive ? (
+                    <div className="relative">
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="w-full h-64 sm:h-80 object-cover rounded-3xl"
+                      />
+                      {/* Targeting Reticle Frame */}
+                      <div className="absolute inset-0 border-2 border-dashed border-teal-400/80 rounded-3xl pointer-events-none flex items-center justify-center">
+                        <span className="bg-slate-900/80 text-teal-300 text-[11px] font-mono px-3 py-1 rounded-full border border-teal-500/50">
+                          Align Product or Menu Shelf in Frame
+                        </span>
+                      </div>
+
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3">
+                        <button
+                          onClick={captureCameraPhoto}
+                          disabled={loading}
+                          className="px-6 py-3 rounded-2xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-black text-xs transition flex items-center gap-2 shadow-xl ring-4 ring-teal-500/30"
+                        >
+                          <Camera className="h-5 w-5" />
+                          <span>📸 Take Photo & Extract Details</span>
+                        </button>
+                        <button
+                          onClick={stopCamera}
+                          className="p-3 rounded-2xl bg-slate-800 text-white hover:bg-slate-700 transition"
+                          title="Close Camera"
+                        >
+                          <VideoOff className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center space-y-4">
+                      <Camera className="h-12 w-12 text-teal-400 mx-auto" />
+                      <div>
+                        <h4 className="font-extrabold text-sm text-white">Device Camera Viewfinder Ready</h4>
+                        <p className="text-xs text-slate-400 mt-1">Point your camera at a shelf, product package, or physical menu card.</p>
+                      </div>
+                      <button
+                        onClick={startCamera}
+                        className="px-6 py-3 rounded-2xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-black text-xs transition flex items-center gap-2 mx-auto shadow-md"
+                      >
+                        <Video className="h-4 w-4" />
+                        <span>Start Camera Stream</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Option 3: Image URL Input */}
+          {imageInputMode === 'URL' && (
+            <div className="flex gap-3">
+              <input
+                type="text"
+                placeholder="Paste Image URL..."
+                value={imageUrl}
+                onChange={e => {
+                  setImageUrl(e.target.value);
+                  setPreviewImage(e.target.value);
+                }}
+                className="flex-1 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:border-teal-600 focus:outline-none"
+              />
+              <button
+                onClick={() => handleScanImageAi()}
+                disabled={loading}
+                className="px-6 py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-xs"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>Run AI Vision Draft</span>
+              </button>
+            </div>
+          )}
+
+          {/* Uploaded / Captured Image Preview Box */}
+          {previewImage && (
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <img src={previewImage} alt="Scanned product preview" className="h-16 w-16 rounded-xl object-cover border border-slate-300 shadow-xs" />
+                <div>
+                  <span className="text-xs font-bold text-slate-900 block">Image Loaded & Processing</span>
+                  <span className="text-[11px] text-teal-700 font-semibold">AI Vision Parsing Active</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => handleScanImageAi(previewImage)}
+                disabled={loading}
+                className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-xs"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>{loading ? 'Analyzing Vision AI...' : 'Re-run Vision Scan'}</span>
+              </button>
+            </div>
+          )}
+
+          {/* Draft Proposals Identified by Vision AI */}
           {draftProducts.length > 0 && (
-            <div className="space-y-3 pt-4 border-t border-slate-200">
-              <h4 className="font-bold text-sm text-teal-700">Draft Proposals Identified by Vision AI:</h4>
+            <div className="space-y-4 pt-4 border-t border-slate-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-extrabold text-base text-teal-700 flex items-center gap-2">
+                    <Sparkles className="h-5 w-5" />
+                    <span>Identified Product Proposals ({draftProducts.length})</span>
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5">Review and adjust extracted details before adding to store catalog.</p>
+                </div>
+
+                <button
+                  onClick={handleApproveAllDrafts}
+                  disabled={loading}
+                  className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs transition shadow-sm flex items-center gap-1.5"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>Approve All ({draftProducts.length})</span>
+                </button>
+              </div>
+
               <div className="space-y-3">
                 {draftProducts.map((draft, idx) => (
-                  <div key={idx} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-                    <div>
-                      <h5 className="font-bold text-sm text-slate-900">{draft.name}</h5>
-                      <p className="text-xs text-slate-500">Suggested Price: ₹{draft.price} • Unit: {draft.unit}</p>
+                  <div key={idx} className="p-4 rounded-2xl bg-white border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs hover:border-teal-500 transition">
+                    <div className="space-y-1 flex-1">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={draft.name}
+                          onChange={e => {
+                            const updated = [...draftProducts];
+                            updated[idx].name = e.target.value;
+                            setDraftProducts(updated);
+                          }}
+                          className="font-bold text-sm text-slate-900 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 focus:outline-none"
+                        />
+                        {draft.isVeg && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Veg
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-4 text-xs text-slate-600 pt-1">
+                        <label className="flex items-center gap-1">
+                          <span>Price: ₹</span>
+                          <input
+                            type="number"
+                            value={draft.price}
+                            onChange={e => {
+                              const updated = [...draftProducts];
+                              updated[idx].price = Number(e.target.value);
+                              setDraftProducts(updated);
+                            }}
+                            className="w-16 px-1 py-0.5 rounded bg-slate-50 border border-slate-200 font-bold text-slate-900"
+                          />
+                        </label>
+
+                        <label className="flex items-center gap-1">
+                          <span>Stock:</span>
+                          <input
+                            type="number"
+                            value={draft.stock}
+                            onChange={e => {
+                              const updated = [...draftProducts];
+                              updated[idx].stock = Number(e.target.value);
+                              setDraftProducts(updated);
+                            }}
+                            className="w-16 px-1 py-0.5 rounded bg-slate-50 border border-slate-200 font-bold text-slate-900"
+                          />
+                        </label>
+
+                        <span className="text-[11px] text-slate-400">Unit: {draft.unit || 'piece'}</span>
+                      </div>
                     </div>
-                    <button
-                      onClick={() => handleApproveDraft(draft)}
-                      disabled={loading}
-                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs"
-                    >
-                      Approve & Publish
-                    </button>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleApproveDraft(draft)}
+                        disabled={loading}
+                        className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs flex items-center gap-1"
+                      >
+                        <Check className="h-4 w-4" />
+                        <span>Approve & Publish</span>
+                      </button>
+
+                      <button
+                        onClick={() => setDraftProducts(prev => prev.filter((_, i) => i !== idx))}
+                        className="p-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition"
+                        title="Remove Proposal"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
