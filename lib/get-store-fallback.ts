@@ -1,11 +1,10 @@
 import { prisma } from '@/lib/prisma';
 import { generateStoreConfig } from '@/lib/store-generator';
-import { getRegisteredDynamicStore, getAllRegisteredStores, registerDynamicStore, RegisteredStore } from '@/lib/store-registry';
 
 export async function getStoreWithFallback(storeIdOrSlug: string): Promise<any> {
   const targetKey = (storeIdOrSlug || 'my-store').toLowerCase();
 
-  // 1. Query Prisma Database for real dynamic store
+  // 1. Always try the database first — this is the source of truth in production
   try {
     const dbStore = await prisma.store.findFirst({
       where: {
@@ -32,66 +31,32 @@ export async function getStoreWithFallback(storeIdOrSlug: string): Promise<any> 
     });
 
     if (dbStore) return dbStore;
-  } catch (err) {
-    console.error('Error querying database for store:', err);
+  } catch (err: any) {
+    console.error('[getStoreWithFallback] Database error:', err.message);
   }
 
-  // 2. Query Dynamic Store Registry (Memory + /tmp File)
-  const registryStore = getRegisteredDynamicStore(targetKey);
-  if (registryStore) return registryStore;
+  // 2. Demo preset static stores (no DB needed, for showcasing)
+  const demoPresets = ['cyber-tech', 'velvet-fashion', 'glamour-salon', 'spicy-bites', 'kirana-king', 'organic-kirana'];
+  const isDemoPreset = demoPresets.includes(targetKey);
 
-  const allStores = getAllRegisteredStores();
-  const matchedStore = allStores.find(
-    s => s.id?.toLowerCase() === targetKey || s.slug?.toLowerCase() === targetKey
-  );
-  if (matchedStore) return matchedStore;
-
-  // 3. Dynamically Provision & Register New Store with Exact Business Category Detection
-  const isDemoPreset = (
-    targetKey === 'cyber-tech' ||
-    targetKey === 'velvet-fashion' ||
-    targetKey === 'glamour-salon' ||
-    targetKey === 'spicy-bites' ||
-    targetKey === 'kirana-king' ||
-    targetKey === 'organic-kirana'
-  );
-
+  // 3. Generate a fresh shell for any unknown slug (useful for onboarding preview)
   let categoryKey = 'Grocery / Kirana';
-  if (
-    targetKey.includes('electronic') || targetKey.includes('electronics') || targetKey.includes('tech') ||
-    targetKey.includes('mobile') || targetKey.includes('gadget') || targetKey.includes('computer')
-  ) {
+  if (targetKey.includes('electronic') || targetKey.includes('tech') || targetKey.includes('mobile') || targetKey.includes('computer') || targetKey.includes('gadget')) {
     categoryKey = 'Electronics & Mobiles';
-  } else if (
-    targetKey.includes('fashion') || targetKey.includes('wear') || targetKey.includes('clothing') ||
-    targetKey.includes('apparel') || targetKey.includes('boutique') || targetKey.includes('style')
-  ) {
+  } else if (targetKey.includes('fashion') || targetKey.includes('wear') || targetKey.includes('clothing') || targetKey.includes('apparel') || targetKey.includes('boutique')) {
     categoryKey = 'Fashion & Apparel';
-  } else if (
-    targetKey.includes('cafe') || targetKey.includes('food') || targetKey.includes('bites') ||
-    targetKey.includes('kitchen') || targetKey.includes('restaurant') || targetKey.includes('pizza') ||
-    targetKey.includes('burger') || targetKey.includes('bakery') || targetKey.includes('dine')
-  ) {
+  } else if (targetKey.includes('cafe') || targetKey.includes('food') || targetKey.includes('bites') || targetKey.includes('kitchen') || targetKey.includes('restaurant') || targetKey.includes('pizza') || targetKey.includes('burger') || targetKey.includes('bakery')) {
     categoryKey = 'Restaurant / Cafe';
-  } else if (
-    targetKey.includes('salon') || targetKey.includes('spa') || targetKey.includes('beauty') ||
-    targetKey.includes('hair') || targetKey.includes('glamour') || targetKey.includes('parlour')
-  ) {
+  } else if (targetKey.includes('salon') || targetKey.includes('spa') || targetKey.includes('beauty') || targetKey.includes('glamour') || targetKey.includes('parlour')) {
     categoryKey = 'Salon / Spa';
-  } else if (
-    targetKey.includes('pharma') || targetKey.includes('med') || targetKey.includes('health') ||
-    targetKey.includes('chemist') || targetKey.includes('drug')
-  ) {
+  } else if (targetKey.includes('pharma') || targetKey.includes('med') || targetKey.includes('health') || targetKey.includes('chemist')) {
     categoryKey = 'Pharmacy / Medical';
-  } else if (
-    targetKey.includes('hardware') || targetKey.includes('tool') || targetKey.includes('paint')
-  ) {
+  } else if (targetKey.includes('hardware') || targetKey.includes('tool') || targetKey.includes('paint')) {
     categoryKey = 'Hardware & Tools';
   }
 
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/i.test(targetKey);
   let formattedStoreName = 'Digital Store';
-  let cleanSlug = targetKey;
 
   if (!isUuid) {
     formattedStoreName = targetKey
@@ -114,48 +79,51 @@ export async function getStoreWithFallback(storeIdOrSlug: string): Promise<any> 
     products: []
   }));
 
-  const products = isDemoPreset ? config.suggestedProducts.map((p, i) => ({
-    id: `prod-${i}`,
-    storeId: targetKey,
-    name: p.name,
-    slug: p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-    categoryId: `cat-${i % config.suggestedCategories.length}`,
-    price: p.price,
-    mrp: p.mrp,
-    stock: p.stock,
-    unit: p.unit,
-    sku: p.sku || `SKU-${i}`,
-    isVeg: p.isVeg ?? true,
-    isAvailable: true,
-    description: p.description,
-    image: p.image || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80'
-  })) : []; // 0 products for new custom store
+  // Only demo presets get sample products; real stores start empty
+  const products = isDemoPreset
+    ? config.suggestedProducts.map((p, i) => ({
+        id: `prod-${i}`,
+        storeId: targetKey,
+        name: p.name,
+        slug: p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        categoryId: `cat-${i % config.suggestedCategories.length}`,
+        price: p.price,
+        mrp: p.mrp,
+        stock: p.stock,
+        unit: p.unit,
+        sku: p.sku || `SKU-${i}`,
+        isVeg: p.isVeg ?? true,
+        isAvailable: true,
+        description: p.description,
+        image: p.image || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80'
+      }))
+    : [];
 
-  const newDynamicStore: RegisteredStore = {
+  return {
     id: targetKey,
-    slug: cleanSlug,
+    slug: targetKey,
     name: formattedStoreName,
     ownerName: 'Store Owner',
     phone: '9876543210',
     whatsapp: '919876543210',
     password: 'password123',
-    address: 'Main Store Premises',
-    city: 'Local Market',
+    address: 'Main Market',
+    city: 'India',
     state: 'India',
     pincode: '110001',
     businessType: categoryKey,
     description: `Official digital storefront for ${formattedStoreName}`,
     themeConfigJson: JSON.stringify(config.suggestedTheme),
     deliveryConfigJson: JSON.stringify(config.suggestedDelivery),
-    paymentConfigJson: JSON.stringify({ upi: true, cod: true, card: true, upiId: `${cleanSlug}@upi` }),
+    paymentConfigJson: JSON.stringify({ upi: true, cod: true, card: true, upiId: `${targetKey}@upi` }),
     seoMetaJson: JSON.stringify({
       title: `${formattedStoreName} - Online Store`,
       description: `Order online directly from ${formattedStoreName}`
     }),
     merchant: {
-      id: 'merchant-user',
+      id: 'merchant-preview',
       name: 'Store Owner',
-      email: `${cleanSlug}@shopcraft.ai`,
+      email: `${targetKey}@shopcraft.ai`,
       phone: '9876543210',
       password: 'password123',
       plan: 'GROWTH'
@@ -165,9 +133,4 @@ export async function getStoreWithFallback(storeIdOrSlug: string): Promise<any> 
     orders: [],
     customers: []
   };
-
-  // Register into dynamic store registry (memory + disk)
-  registerDynamicStore(newDynamicStore);
-
-  return newDynamicStore;
 }

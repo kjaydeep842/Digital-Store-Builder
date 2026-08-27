@@ -2,7 +2,6 @@
 
 import { prisma } from '@/lib/prisma';
 import { generateStoreConfig } from '@/lib/store-generator';
-import { registerDynamicStore } from '@/lib/store-registry';
 
 export interface CreateStoreInput {
   merchantName: string;
@@ -29,7 +28,7 @@ export async function createStoreAction(input: CreateStoreInput) {
 
   const config = generateStoreConfig(input.businessType, input.storeName);
 
-  let storeId = baseSlug;
+  let storeId = '';
   let slug = baseSlug;
 
   const finalAddress = input.address?.trim() || 'Main Market Road';
@@ -37,18 +36,19 @@ export async function createStoreAction(input: CreateStoreInput) {
   const finalState = input.state?.trim() || 'Delhi';
   const finalPincode = input.pincode?.trim() || '110001';
   const finalPassword = input.password?.trim() || 'password123';
+  const finalEmail = input.email?.trim() || `${input.phone}@shopcraft.ai`;
 
   try {
-    // 1. Create or fetch merchant in database
+    // 1. Create or fetch merchant
     let merchant = await prisma.merchant.findUnique({
-      where: { email: input.email }
+      where: { email: finalEmail }
     }).catch(() => null);
 
     if (!merchant) {
       merchant = await prisma.merchant.create({
         data: {
           name: input.merchantName,
-          email: input.email,
+          email: finalEmail,
           phone: input.phone,
           whatsapp: input.whatsapp || input.phone,
           password: finalPassword,
@@ -56,22 +56,28 @@ export async function createStoreAction(input: CreateStoreInput) {
         }
       }).catch(() => null);
     } else {
+      // Update password in case they are registering again
       await prisma.merchant.update({
         where: { id: merchant.id },
         data: { password: finalPassword }
       }).catch(() => null);
     }
 
+    if (!merchant) {
+      return { success: false, error: 'Failed to create merchant account. Please check your database connection.' };
+    }
+
+    // 2. Ensure slug is unique
     let counter = 1;
     while (await prisma.store.findUnique({ where: { slug } }).catch(() => null)) {
       slug = `${baseSlug}-${counter}`;
       counter++;
     }
 
-    // 2. Create store in database with exact location provided
+    // 3. Create the store
     const store = await prisma.store.create({
       data: {
-        merchantId: merchant?.id || 'merchant-default',
+        merchantId: merchant.id,
         name: input.storeName,
         slug,
         ownerName: input.merchantName,
@@ -97,7 +103,7 @@ export async function createStoreAction(input: CreateStoreInput) {
     storeId = store.id;
     slug = store.slug;
 
-    // 3. Create Categories ONLY (NO auto-seeded products for a fresh store!)
+    // 4. Create categories (no auto-seeded products — fresh empty store)
     for (const cat of config.suggestedCategories) {
       await prisma.category.create({
         data: {
@@ -108,55 +114,13 @@ export async function createStoreAction(input: CreateStoreInput) {
         }
       }).catch(() => null);
     }
+
+    return { success: true, storeId, slug };
   } catch (error: any) {
-    console.error('Database store creation note (using dynamic engine):', error);
+    console.error('[createStoreAction] Error:', error.message);
+    return {
+      success: false,
+      error: `Store creation failed: ${error.message}. Ensure TURSO_DATABASE_URL and TURSO_AUTH_TOKEN are set in Vercel environment variables.`
+    };
   }
-
-  // Register in memory registry with FRESH STORE (0 products) and exact credentials & location
-  const registeredCategories = config.suggestedCategories.map((c, i) => ({
-    id: `cat-${i}`,
-    storeId,
-    name: c.name,
-    slug: c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-    icon: c.icon,
-    sortOrder: i,
-    products: []
-  }));
-
-  registerDynamicStore({
-    id: storeId,
-    slug,
-    name: input.storeName,
-    ownerName: input.merchantName,
-    phone: input.phone,
-    whatsapp: input.whatsapp || input.phone,
-    password: finalPassword,
-    address: finalAddress,
-    city: finalCity,
-    state: finalState,
-    pincode: finalPincode,
-    businessType: input.businessType,
-    description: input.description || config.definition.description,
-    themeConfigJson: JSON.stringify(config.suggestedTheme),
-    deliveryConfigJson: JSON.stringify(config.suggestedDelivery),
-    paymentConfigJson: JSON.stringify({ upi: true, cod: true, card: true, upiId: `${slug}@upi` }),
-    seoMetaJson: JSON.stringify({
-      title: `${input.storeName} - Online Storefront`,
-      description: `Shop directly from ${input.storeName}`
-    }),
-    merchant: {
-      id: 'merchant-user',
-      name: input.merchantName,
-      email: input.email,
-      phone: input.phone,
-      password: finalPassword,
-      plan: 'GROWTH'
-    },
-    categories: registeredCategories,
-    products: [], // ENTIRE FRESH STORE: 0 auto-seeded products!
-    orders: [], // 0 orders!
-    customers: [] // 0 customers!
-  });
-
-  return { success: true, storeId, slug };
 }

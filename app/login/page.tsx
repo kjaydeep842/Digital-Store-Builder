@@ -31,8 +31,10 @@ export default function MerchantLoginPage() {
       localStorage.setItem('merchant_store_id', res.storeId);
       localStorage.setItem('merchant_store_slug', res.slug || res.storeId);
       localStorage.setItem('merchant_name', res.merchantName || 'Store Owner');
+      localStorage.setItem('merchant_store_name', res.storeName || 'My Store');
 
-      router.push(`/dashboard/${res.slug || res.storeId}`);
+      // Hard redirect to avoid Next.js router cache returning stale data
+      window.location.href = `/dashboard/${res.storeId}`;
     } else {
       setError(res.error || 'Invalid credentials. Please try again.');
     }
