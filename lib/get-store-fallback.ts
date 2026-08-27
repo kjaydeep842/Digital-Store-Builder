@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { generateStoreConfig } from '@/lib/store-generator';
-import { getRegisteredDynamicStore, registerDynamicStore, RegisteredStore } from '@/lib/store-registry';
+import { getRegisteredDynamicStore, getAllRegisteredStores, registerDynamicStore, RegisteredStore } from '@/lib/store-registry';
 
 export async function getStoreWithFallback(storeIdOrSlug: string): Promise<any> {
   const targetKey = (storeIdOrSlug || 'my-store').toLowerCase();
@@ -40,7 +40,13 @@ export async function getStoreWithFallback(storeIdOrSlug: string): Promise<any> 
   const registryStore = getRegisteredDynamicStore(targetKey);
   if (registryStore) return registryStore;
 
-  // 3. Dynamically Provision & Register New Store (Pure Dynamic Data Architecture)
+  const allStores = getAllRegisteredStores();
+  const matchedStore = allStores.find(
+    s => s.id?.toLowerCase() === targetKey || s.slug?.toLowerCase() === targetKey
+  );
+  if (matchedStore) return matchedStore;
+
+  // 3. Dynamically Provision & Register New Store with Exact Business Category Detection
   const isDemoPreset = (
     targetKey === 'cyber-tech' ||
     targetKey === 'velvet-fashion' ||
@@ -52,8 +58,19 @@ export async function getStoreWithFallback(storeIdOrSlug: string): Promise<any> 
 
   let categoryKey = 'Grocery / Kirana';
   if (
+    targetKey.includes('electronic') || targetKey.includes('electronics') || targetKey.includes('tech') ||
+    targetKey.includes('mobile') || targetKey.includes('gadget') || targetKey.includes('computer')
+  ) {
+    categoryKey = 'Electronics & Mobiles';
+  } else if (
+    targetKey.includes('fashion') || targetKey.includes('wear') || targetKey.includes('clothing') ||
+    targetKey.includes('apparel') || targetKey.includes('boutique') || targetKey.includes('style')
+  ) {
+    categoryKey = 'Fashion & Apparel';
+  } else if (
     targetKey.includes('cafe') || targetKey.includes('food') || targetKey.includes('bites') ||
-    targetKey.includes('kitchen') || targetKey.includes('restaurant') || targetKey.includes('pizza') || targetKey.includes('burger')
+    targetKey.includes('kitchen') || targetKey.includes('restaurant') || targetKey.includes('pizza') ||
+    targetKey.includes('burger') || targetKey.includes('bakery') || targetKey.includes('dine')
   ) {
     categoryKey = 'Restaurant / Cafe';
   } else if (
@@ -62,17 +79,14 @@ export async function getStoreWithFallback(storeIdOrSlug: string): Promise<any> 
   ) {
     categoryKey = 'Salon / Spa';
   } else if (
-    targetKey.includes('fashion') || targetKey.includes('wear') || targetKey.includes('clothing') || targetKey.includes('apparel')
-  ) {
-    categoryKey = 'Fashion & Apparel';
-  } else if (
-    targetKey.includes('tech') || targetKey.includes('mobile') || targetKey.includes('electronics')
-  ) {
-    categoryKey = 'Electronics & Mobiles';
-  } else if (
-    targetKey.includes('pharma') || targetKey.includes('med') || targetKey.includes('health')
+    targetKey.includes('pharma') || targetKey.includes('med') || targetKey.includes('health') ||
+    targetKey.includes('chemist') || targetKey.includes('drug')
   ) {
     categoryKey = 'Pharmacy / Medical';
+  } else if (
+    targetKey.includes('hardware') || targetKey.includes('tool') || targetKey.includes('paint')
+  ) {
+    categoryKey = 'Hardware & Tools';
   }
 
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/i.test(targetKey);

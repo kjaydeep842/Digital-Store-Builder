@@ -379,7 +379,7 @@ function OnboardingContent() {
               </Link>
 
               <Link
-                href={`/dashboard/${createdStore.storeId}`}
+                href={`/dashboard/${createdStore.slug}`}
                 className="p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:border-teal-600 transition group"
               >
                 <Store className="h-5 w-5 text-teal-600 mb-2 group-hover:scale-110 transition" />
@@ -388,7 +388,7 @@ function OnboardingContent() {
               </Link>
 
               <Link
-                href={`/dashboard/${createdStore.storeId}/pos`}
+                href={`/dashboard/${createdStore.slug}/pos`}
                 className="p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:border-amber-600 transition group"
               >
                 <Smartphone className="h-5 w-5 text-amber-600 mb-2 group-hover:scale-110 transition" />
@@ -397,7 +397,7 @@ function OnboardingContent() {
               </Link>
 
               <Link
-                href={`/dashboard/${createdStore.storeId}/qr`}
+                href={`/dashboard/${createdStore.slug}/qr`}
                 className="p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:border-emerald-600 transition group"
               >
                 <QrCode className="h-5 w-5 text-emerald-600 mb-2 group-hover:scale-110 transition" />
@@ -408,7 +408,7 @@ function OnboardingContent() {
 
             <div className="pt-4 flex flex-col sm:flex-row gap-3">
               <Link
-                href={`/dashboard/${createdStore.storeId}`}
+                href={`/dashboard/${createdStore.slug}`}
                 className="flex-1 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-base transition text-center shadow-lg"
               >
                 Go to Merchant Dashboard 🚀
