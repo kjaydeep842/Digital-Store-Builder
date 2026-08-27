@@ -38,48 +38,48 @@ export default function WhatsAppClient({ store }: WhatsAppClientProps) {
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
         <div>
-          <h2 className="text-2xl font-extrabold text-white flex items-center gap-2">
-            <MessageSquare className="h-6 w-6 text-emerald-400" />
+          <h2 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
+            <MessageSquare className="h-6 w-6 text-emerald-600" />
             <span>WhatsApp AI Promotional Campaign Studio</span>
           </h2>
-          <p className="text-xs text-slate-400 mt-1">Broadcast targeted promotional offers directly to customer WhatsApp phones.</p>
+          <p className="text-xs text-slate-500 mt-1">Broadcast targeted promotional offers directly to customer WhatsApp phones.</p>
         </div>
       </div>
 
       {resultMsg && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold text-sm flex items-center gap-2">
-          <CheckCircle2 className="h-5 w-5" />
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-sm flex items-center gap-2">
+          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
           <span>{resultMsg}</span>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Campaign Creation Form */}
-        <form onSubmit={handleDispatchCampaign} className="lg:col-span-2 p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
-          <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
-            <Zap className="h-5 w-5 text-amber-400" />
+        <form onSubmit={handleDispatchCampaign} className="lg:col-span-2 p-6 rounded-3xl bg-white border border-slate-200 space-y-4 shadow-sm">
+          <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+            <Zap className="h-5 w-5 text-amber-600" />
             <span>Create New WhatsApp Broadcast Campaign</span>
           </h3>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className="block text-xs font-bold text-slate-300 mb-1">Campaign Title *</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Campaign Title *</label>
               <input
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:border-emerald-500 focus:outline-none"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:border-emerald-600 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">Campaign Type</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Campaign Type</label>
               <select
                 value={type}
                 onChange={e => setType(e.target.value as any)}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:border-emerald-500 focus:outline-none"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:border-emerald-600 focus:outline-none"
               >
                 <option value="PROMOTIONAL">Promotional Broadcast</option>
                 <option value="ABANDONED_CART">Abandoned Cart Recovery</option>
@@ -89,11 +89,11 @@ export default function WhatsAppClient({ store }: WhatsAppClientProps) {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">Target Customer Audience</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Target Customer Audience</label>
               <select
                 value={targetAudience}
                 onChange={e => setTargetAudience(e.target.value as any)}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:border-emerald-500 focus:outline-none"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:border-emerald-600 focus:outline-none"
               >
                 <option value="ALL_CUSTOMERS">All Registered Customers ({store.customers.length})</option>
                 <option value="REPEAT_BUYERS">Repeat VIP Buyers</option>
@@ -102,23 +102,23 @@ export default function WhatsAppClient({ store }: WhatsAppClientProps) {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">Discount Coupon Code</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Discount Coupon Code</label>
               <input
                 type="text"
                 value={couponCode}
                 onChange={e => setCouponCode(e.target.value)}
                 placeholder="e.g. SAVE20"
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:border-emerald-500 focus:outline-none"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:border-emerald-600 focus:outline-none"
               />
             </div>
 
             <div className="col-span-2">
-              <label className="block text-xs font-bold text-slate-300 mb-1">WhatsApp Message Body *</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">WhatsApp Message Body *</label>
               <textarea
                 rows={3}
                 value={messageText}
                 onChange={e => setMessageText(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-mono focus:border-emerald-500 focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-mono focus:border-emerald-600 focus:outline-none"
               />
             </div>
           </div>
@@ -126,7 +126,7 @@ export default function WhatsAppClient({ store }: WhatsAppClientProps) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+            className="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs transition shadow-md flex items-center justify-center gap-2"
           >
             <Send className="h-4 w-4" />
             <span>{loading ? 'Dispatching Broadcast...' : 'Dispatch WhatsApp Campaign Now'}</span>
@@ -134,24 +134,24 @@ export default function WhatsAppClient({ store }: WhatsAppClientProps) {
         </form>
 
         {/* CRM Audience Insights Card */}
-        <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 h-fit">
-          <h3 className="font-extrabold text-base text-white flex items-center gap-2">
-            <Users className="h-5 w-5 text-emerald-400" />
+        <div className="p-6 rounded-3xl bg-white border border-slate-200 space-y-4 h-fit shadow-sm">
+          <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+            <Users className="h-5 w-5 text-emerald-600" />
             <span>Audience Segments</span>
           </h3>
 
           <div className="space-y-3 text-xs">
-            <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex justify-between">
-              <span className="text-slate-300 font-semibold">Total Opted-in Contacts</span>
-              <span className="font-extrabold text-white">{store.customers.length}</span>
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex justify-between">
+              <span className="text-slate-600 font-semibold">Total Opted-in Contacts</span>
+              <span className="font-extrabold text-slate-900">{store.customers.length}</span>
             </div>
-            <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex justify-between">
-              <span className="text-slate-300 font-semibold">Repeat VIP Customers</span>
-              <span className="font-extrabold text-emerald-400">{store.customers.filter((c: any) => c.totalOrders >= 2).length}</span>
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex justify-between">
+              <span className="text-slate-600 font-semibold">Repeat VIP Customers</span>
+              <span className="font-extrabold text-emerald-700">{store.customers.filter((c: any) => c.totalOrders >= 2).length}</span>
             </div>
-            <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex justify-between">
-              <span className="text-slate-300 font-semibold">WhatsApp Delivery Rate</span>
-              <span className="font-extrabold text-emerald-400">99.8%</span>
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex justify-between">
+              <span className="text-slate-600 font-semibold">WhatsApp Delivery Rate</span>
+              <span className="font-extrabold text-emerald-700">99.8%</span>
             </div>
           </div>
         </div>

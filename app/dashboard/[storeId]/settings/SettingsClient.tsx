@@ -182,7 +182,7 @@ export default function SettingsClient({
         <button
           onClick={handleSaveSettings}
           disabled={loading}
-          className="px-5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/20 disabled:opacity-50"
+          className="px-5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs transition flex items-center gap-1.5 shadow-md disabled:opacity-50"
         >
           <Save className="h-4 w-4" />
           <span>{loading ? 'Saving Changes...' : 'Save & Publish Theme'}</span>
@@ -463,7 +463,7 @@ export default function SettingsClient({
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-emerald-500 hover:from-indigo-500 hover:to-emerald-400 text-white font-extrabold text-base transition shadow-xl shadow-indigo-600/25 flex items-center justify-center gap-2 disabled:opacity-50"
+          className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-base transition shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
         >
           <Save className="h-5 w-5" />
           <span>{loading ? 'Publishing Updates...' : 'Save & Publish All Dynamic Settings'}</span>
