@@ -24,9 +24,9 @@ function OnboardingContent() {
 
   const [storeName, setStoreName] = useState('');
   const [address, setAddress] = useState('');
-  const [city, setCity] = useState('New Delhi');
-  const [state, setState] = useState('Delhi');
-  const [pincode, setPincode] = useState('110001');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [pincode, setPincode] = useState('');
 
   const [businessType, setBusinessType] = useState(initialCategory || 'Grocery / Kirana');
   const [customBusinessType, setCustomBusinessType] = useState('');
@@ -217,27 +217,30 @@ function OnboardingContent() {
                   <label className="block font-bold text-slate-700 mb-1">City</label>
                   <input
                     type="text"
+                    placeholder="e.g. Mumbai"
                     value={city}
                     onChange={e => setCity(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-300 font-semibold text-slate-900"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-300 font-semibold text-slate-900 focus:border-emerald-600 focus:outline-none"
                   />
                 </div>
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">State</label>
                   <input
                     type="text"
+                    placeholder="e.g. Maharashtra"
                     value={state}
                     onChange={e => setState(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-300 font-semibold text-slate-900"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-300 font-semibold text-slate-900 focus:border-emerald-600 focus:outline-none"
                   />
                 </div>
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Pincode</label>
                   <input
                     type="text"
+                    placeholder="e.g. 400001"
                     value={pincode}
                     onChange={e => setPincode(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-300 font-semibold text-slate-900"
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-300 font-semibold text-slate-900 focus:border-emerald-600 focus:outline-none"
                   />
                 </div>
               </div>

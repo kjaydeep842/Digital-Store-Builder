@@ -1,12 +1,13 @@
 // Global in-memory dynamic store registry to preserve newly created merchant stores across serverless calls
 
-interface RegisteredStore {
+export interface RegisteredStore {
   id: string;
   slug: string;
   name: string;
   ownerName: string;
   phone: string;
   whatsapp: string;
+  password?: string;
   address: string;
   city: string;
   state: string;
