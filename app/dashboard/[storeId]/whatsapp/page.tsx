@@ -13,7 +13,7 @@ export default async function WhatsAppPage({ params }: WhatsAppPageProps) {
   const store = await getStoreWithFallback(storeId);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-emerald-500">
+    <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-emerald-500">
       <DashboardHeader store={store} />
       <WhatsAppClient store={store} />
     </div>

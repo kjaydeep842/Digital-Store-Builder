@@ -17,7 +17,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
   const themeConfig = JSON.parse(store.themeConfigJson || '{}');
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-emerald-500">
+    <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-emerald-500">
       <DashboardHeader store={store} />
       <SettingsClient
         store={store}
