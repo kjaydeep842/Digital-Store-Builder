@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import DashboardHeader from '../DashboardHeader';
 import SettingsClient from './SettingsClient';
 import { getStoreWithFallback } from '@/lib/get-store-fallback';
@@ -11,6 +12,10 @@ interface SettingsPageProps {
 export default async function SettingsPage({ params }: SettingsPageProps) {
   const { storeId } = await params;
   const store = await getStoreWithFallback(storeId);
+
+  if (!store) {
+    notFound();
+  }
 
   const deliveryConfig = JSON.parse(store.deliveryConfigJson || '{}');
   const paymentConfig = JSON.parse(store.paymentConfigJson || '{}');

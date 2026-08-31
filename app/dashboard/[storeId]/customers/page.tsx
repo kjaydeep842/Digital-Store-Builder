@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import DashboardHeader from '../DashboardHeader';
 import { Users, Award, Star, TrendingUp, Phone, Mail, MapPin } from 'lucide-react';
 import { getStoreWithFallback } from '@/lib/get-store-fallback';
@@ -11,6 +12,10 @@ interface CustomersPageProps {
 export default async function CustomersPage({ params }: CustomersPageProps) {
   const { storeId } = await params;
   const store = await getStoreWithFallback(storeId);
+
+  if (!store) {
+    notFound();
+  }
 
   const vipCustomers = (store.customers || []).filter((c: any) => c.segment === 'VIP');
   const repeatCustomers = (store.customers || []).filter((c: any) => c.segment === 'REPEAT');

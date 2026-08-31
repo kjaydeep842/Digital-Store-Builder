@@ -26,6 +26,18 @@ export default function DashboardHeader({ store }: DashboardHeaderProps) {
     router.push('/login');
   };
 
+  const allMerchantStores = (store as any).merchant?.stores || [];
+  const isDemoStore = ['kirana-king', 'spicy-bites', 'glamour-salon', 'cyber-tech', 'velvet-fashion'].includes(store.slug);
+  const merchantStores = isDemoStore
+    ? allMerchantStores
+    : allMerchantStores.filter((s: any) => !['kirana-king', 'spicy-bites', 'glamour-salon', 'cyber-tech', 'velvet-fashion'].includes(s.slug));
+
+  const sortedMerchantStores = [...merchantStores].sort((a: any, b: any) => {
+    if (a.id === store.id) return -1;
+    if (b.id === store.id) return 1;
+    return 0;
+  });
+
   const navItems = [
     { label: 'Overview', href: `/dashboard/${store.id}`, icon: LayoutDashboard },
     { label: 'Orders', href: `/dashboard/${store.id}/orders`, icon: ShoppingBag },
@@ -56,8 +68,23 @@ export default function DashboardHeader({ store }: DashboardHeaderProps) {
               <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
                 {store.businessType}
               </span>
+              {sortedMerchantStores.length > 1 && (
+                <select
+                  value={store.id}
+                  onChange={(e) => router.push(`/dashboard/${e.target.value}`)}
+                  className="font-extrabold text-[10px] bg-slate-100 border border-slate-200 text-slate-700 rounded-full px-2 py-0.5 focus:outline-none cursor-pointer"
+                >
+                  {sortedMerchantStores.map((s: any) => (
+                    <option key={s.id} value={s.id}>
+                      Switch to: {s.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </h1>
-            <span className="text-[11px] font-semibold text-slate-500">ShopCraft AI Merchant OS</span>
+            <span className="text-[11px] font-semibold text-slate-500">
+              ShopCraft AI Merchant OS {store.ownerName ? `• ${store.ownerName}` : ''}
+            </span>
           </div>
         </div>
 

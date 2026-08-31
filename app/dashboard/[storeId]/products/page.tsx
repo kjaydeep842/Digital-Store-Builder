@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import DashboardHeader from '../DashboardHeader';
 import ProductManagerClient from './ProductManagerClient';
 import { getStoreWithFallback } from '@/lib/get-store-fallback';
@@ -11,6 +12,10 @@ interface ProductsPageProps {
 export default async function ProductsPage({ params }: ProductsPageProps) {
   const { storeId } = await params;
   const store = await getStoreWithFallback(storeId);
+
+  if (!store) {
+    notFound();
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-emerald-500">

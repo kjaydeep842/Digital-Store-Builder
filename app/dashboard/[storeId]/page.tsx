@@ -14,6 +14,12 @@ export default async function DashboardOverviewPage({ params }: DashboardPagePro
   const { storeId } = await params;
   const store = await getStoreWithFallback(storeId);
 
+  if (!store) {
+    notFound();
+  }
+
+  const ownerDisplayName = store.ownerName || store.merchant?.name || 'Store Owner';
+
   // Calculate KPIs
   const totalOrders = (store.orders || []).length;
   const totalRevenue = (store.orders || []).reduce((sum: number, o: any) => sum + o.grandTotal, 0);
@@ -32,7 +38,7 @@ export default async function DashboardOverviewPage({ params }: DashboardPagePro
             <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
               ShopCraft AI Engine Active
             </span>
-            <h2 className="text-2xl font-black text-slate-900 mt-2">Welcome back, {store.ownerName}! 👋</h2>
+            <h2 className="text-2xl font-black text-slate-900 mt-2">Welcome back, {ownerDisplayName}! 👋</h2>
             <p className="text-xs text-slate-500 mt-1">Here is today's real-time snapshot of your physical and online store performance.</p>
           </div>
 

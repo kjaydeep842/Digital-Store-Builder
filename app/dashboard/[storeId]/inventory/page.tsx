@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import DashboardHeader from '../DashboardHeader';
 import { Layers, AlertTriangle, ArrowUpRight, ArrowDownRight, RefreshCw } from 'lucide-react';
 import { getStoreWithFallback } from '@/lib/get-store-fallback';
@@ -11,6 +12,10 @@ interface InventoryPageProps {
 export default async function InventoryPage({ params }: InventoryPageProps) {
   const { storeId } = await params;
   const store = await getStoreWithFallback(storeId);
+
+  if (!store) {
+    notFound();
+  }
   const lowStockItems = (store.products || []).filter((p: any) => p.stock <= 5);
 
   return (

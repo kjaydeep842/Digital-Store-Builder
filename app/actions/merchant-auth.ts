@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { cookies } from 'next/headers';
 
 export async function merchantLoginAction(identifier: string, password: string) {
   if (!identifier || !password) {
@@ -20,7 +21,7 @@ export async function merchantLoginAction(identifier: string, password: string) 
         ]
       },
       include: { stores: true }
-    }).catch(() => null);
+    });
 
     if (merchant) {
       if (merchant.password !== cleanPassword) {
@@ -30,28 +31,50 @@ export async function merchantLoginAction(identifier: string, password: string) 
         };
       }
       const store: any = merchant.stores?.[0];
+      if (!store) {
+        return {
+          success: false,
+          error: 'No active store found for this merchant. Please create a store at /onboarding.'
+        };
+      }
+
+      // Set cookie session
+      try {
+        const cookieStore = await cookies();
+        cookieStore.set('merchant_session', JSON.stringify({
+          merchantId: merchant.id,
+          merchantName: merchant.name,
+          storeId: store.id,
+          storeSlug: store.slug
+        }), {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          path: '/',
+          maxAge: 60 * 60 * 24 * 30
+        });
+      } catch (e) {}
+
       return {
         success: true,
-        storeId: store ? store.id : cleanId,
-        slug: store ? store.slug : cleanId,
+        storeId: store.id,
+        slug: store.slug,
         merchantName: merchant.name,
-        storeName: store ? store.name : 'My Store'
+        storeName: store.name
       };
     }
 
-    // 2. Try matching a Store directly by slug, phone, or id
+    // 2. Try matching a Store directly by slug or id
     const dbStore = await prisma.store.findFirst({
       where: {
         OR: [
           { slug: cleanId },
           { id: cleanId },
-          { phone: cleanId },
-          { merchant: { email: cleanId } },
-          { merchant: { phone: cleanId } }
+          { phone: cleanId }
         ]
       },
       include: { merchant: true }
-    }).catch(() => null);
+    });
 
     if (dbStore) {
       const storedPassword = dbStore.merchant?.password || 'password123';
@@ -61,11 +84,29 @@ export async function merchantLoginAction(identifier: string, password: string) 
           error: 'Incorrect password. Please enter the password you set during store creation.'
         };
       }
+
+      // Set cookie session
+      try {
+        const cookieStore = await cookies();
+        cookieStore.set('merchant_session', JSON.stringify({
+          merchantId: dbStore.merchantId,
+          merchantName: dbStore.ownerName || dbStore.merchant?.name,
+          storeId: dbStore.id,
+          storeSlug: dbStore.slug
+        }), {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          path: '/',
+          maxAge: 60 * 60 * 24 * 30
+        });
+      } catch (e) {}
+
       return {
         success: true,
         storeId: dbStore.id,
         slug: dbStore.slug,
-        merchantName: dbStore.ownerName || dbStore.merchant?.name || 'Store Owner',
+        merchantName: dbStore.ownerName || dbStore.merchant?.name || '',
         storeName: dbStore.name
       };
     }
@@ -73,7 +114,7 @@ export async function merchantLoginAction(identifier: string, password: string) 
     console.error('[merchantLoginAction] Database error:', err.message);
     return {
       success: false,
-      error: 'Database connection error. Please ensure the database is configured correctly on Vercel (set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN).'
+      error: `Database connection error: ${err.message}`
     };
   }
 
