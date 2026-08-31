@@ -60,6 +60,10 @@ async function main() {
     }
   });
 
+  // Clear existing items for re-seeding safely
+  await prisma.product.deleteMany({ where: { storeId: kiranaStore.id } });
+  await prisma.category.deleteMany({ where: { storeId: kiranaStore.id } });
+
   // Seed Kirana Categories & Products
   for (const cat of kiranaConfig.suggestedCategories) {
     const dbCat = await prisma.category.create({
@@ -130,6 +134,9 @@ async function main() {
     }
   });
 
+  await prisma.product.deleteMany({ where: { storeId: restStore.id } });
+  await prisma.category.deleteMany({ where: { storeId: restStore.id } });
+
   for (const cat of restConfig.suggestedCategories) {
     const dbCat = await prisma.category.create({
       data: {
@@ -199,6 +206,9 @@ async function main() {
     }
   });
 
+  await prisma.product.deleteMany({ where: { storeId: salonStore.id } });
+  await prisma.category.deleteMany({ where: { storeId: salonStore.id } });
+
   for (const cat of salonConfig.suggestedCategories) {
     const dbCat = await prisma.category.create({
       data: {
@@ -230,7 +240,7 @@ async function main() {
     }
   }
 
-  console.log('🎉 Database Seeding Completed Successfully!');
+  console.log('🎉 Database Seeding Completed Successfully on MongoDB Atlas!');
 }
 
 main()

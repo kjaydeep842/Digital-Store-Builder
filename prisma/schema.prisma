@@ -1,16 +1,15 @@
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-1.0.x", "rhel-openssl-3.0.x"]
-  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 model Merchant {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid()) @map("_id")
   name      String
   email     String   @unique
   phone     String
@@ -24,7 +23,7 @@ model Merchant {
 }
 
 model Store {
-  id                 String                  @id @default(uuid())
+  id                 String                  @id @default(uuid()) @map("_id")
   merchantId         String
   merchant           Merchant                @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   name               String
@@ -45,7 +44,7 @@ model Store {
   paymentConfigJson  String                  @default("{}") // upi, cod, card toggles
   seoMetaJson        String                  @default("{}") // meta title, description, schema
   qrCodeUrl          String?
-  customDomain       String?                 @unique
+  customDomain       String?
   isActive           Boolean                 @default(true)
   categories         Category[]
   products           Product[]
@@ -60,7 +59,7 @@ model Store {
 }
 
 model Category {
-  id        String    @id @default(uuid())
+  id        String    @id @default(uuid()) @map("_id")
   storeId   String
   store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
   name      String
@@ -74,7 +73,7 @@ model Category {
 }
 
 model Product {
-  id             String                 @id @default(uuid())
+  id             String                 @id @default(uuid()) @map("_id")
   storeId        String
   store          Store                  @relation(fields: [storeId], references: [id], onDelete: Cascade)
   categoryId     String?
@@ -101,7 +100,7 @@ model Product {
 }
 
 model InventoryTransaction {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid()) @map("_id")
   storeId   String
   store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   productId String
@@ -113,30 +112,30 @@ model InventoryTransaction {
 }
 
 model Order {
-  id             String   @id @default(uuid())
-  storeId        String
-  store          Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  orderNumber    String   @unique
-  customerName   String
-  customerPhone  String
+  id              String   @id @default(uuid()) @map("_id")
+  storeId         String
+  store           Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orderNumber     String   @unique
+  customerName    String
+  customerPhone   String
   customerAddress String?
-  pincode        String?
-  totalAmount    Float
-  discountAmount Float    @default(0)
-  deliveryCharge Float    @default(0)
-  grandTotal     Float
-  paymentMethod  String   // UPI, COD, CARD
-  paymentStatus  String   @default("PENDING") // PENDING, PAID, FAILED, REFUNDED
-  orderStatus    String   @default("PENDING") // PENDING, ACCEPTED, PREPARING, READY, OUT_FOR_DELIVERY, DELIVERED, CANCELLED
-  deliverySlot   String?
-  notes          String?
-  itemsJson      String   // Array of purchased products with qty, price, options
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  pincode         String?
+  totalAmount     Float
+  discountAmount  Float    @default(0)
+  deliveryCharge  Float    @default(0)
+  grandTotal      Float
+  paymentMethod   String   // UPI, COD, CARD
+  paymentStatus   String   @default("PENDING") // PENDING, PAID, FAILED, REFUNDED
+  orderStatus     String   @default("PENDING") // PENDING, ACCEPTED, PREPARING, READY, OUT_FOR_DELIVERY, DELIVERED, CANCELLED
+  deliverySlot    String?
+  notes           String?
+  itemsJson       String   // Array of purchased products with qty, price, options
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model PosTransaction {
-  id            String   @id @default(uuid())
+  id            String   @id @default(uuid()) @map("_id")
   storeId       String
   store         Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   receiptNumber String   @unique
@@ -149,7 +148,7 @@ model PosTransaction {
 }
 
 model Customer {
-  id            String    @id @default(uuid())
+  id            String    @id @default(uuid()) @map("_id")
   storeId       String
   store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
   name          String
@@ -167,7 +166,7 @@ model Customer {
 }
 
 model Coupon {
-  id            String    @id @default(uuid())
+  id            String    @id @default(uuid()) @map("_id")
   storeId       String
   store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
   code          String
@@ -183,7 +182,7 @@ model Coupon {
 }
 
 model AiLog {
-  id         String   @id @default(uuid())
+  id         String   @id @default(uuid()) @map("_id")
   storeId    String
   store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   action     String   // PRODUCT_GEN, IMAGE_SCAN, VOICE_PARSE, MARKETING_GEN, ASSISTANT_QUERY
@@ -194,7 +193,7 @@ model AiLog {
 }
 
 model SuperAdmin {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid()) @map("_id")
   email     String   @unique
   password  String
   name      String   @default("Super Admin")
