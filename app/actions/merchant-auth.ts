@@ -1,6 +1,7 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
+import { prisma, withDbRetry } from '@/lib/prisma';
+import { getRegisteredDynamicStore, getAllRegisteredStores } from '@/lib/store-registry';
 import { cookies } from 'next/headers';
 
 export async function merchantLoginAction(identifier: string, password: string) {
@@ -13,15 +14,17 @@ export async function merchantLoginAction(identifier: string, password: string) 
 
   try {
     // 1. Try matching a Merchant record by email or phone
-    const merchant = await prisma.merchant.findFirst({
-      where: {
-        OR: [
-          { email: cleanId },
-          { phone: cleanId }
-        ]
-      },
-      include: { stores: true }
-    });
+    const merchant = await withDbRetry(async () => {
+      return await prisma.merchant.findFirst({
+        where: {
+          OR: [
+            { email: cleanId },
+            { phone: cleanId }
+          ]
+        },
+        include: { stores: true }
+      });
+    }, 1, 300);
 
     if (merchant) {
       if (merchant.password !== cleanPassword) {
@@ -64,17 +67,19 @@ export async function merchantLoginAction(identifier: string, password: string) 
       };
     }
 
-    // 2. Try matching a Store directly by slug or id
-    const dbStore = await prisma.store.findFirst({
-      where: {
-        OR: [
-          { slug: cleanId },
-          { id: cleanId },
-          { phone: cleanId }
-        ]
-      },
-      include: { merchant: true }
-    });
+    // 2. Try matching a Store directly by slug, id, or phone
+    const dbStore = await withDbRetry(async () => {
+      return await prisma.store.findFirst({
+        where: {
+          OR: [
+            { slug: cleanId },
+            { id: cleanId },
+            { phone: cleanId }
+          ]
+        },
+        include: { merchant: true }
+      });
+    }, 1, 300);
 
     if (dbStore) {
       const storedPassword = dbStore.merchant?.password || 'password123';
@@ -111,10 +116,49 @@ export async function merchantLoginAction(identifier: string, password: string) 
       };
     }
   } catch (err: any) {
-    console.error('[merchantLoginAction] Database error:', err.message);
+    console.warn('[merchantLoginAction] Database query warning:', err.message);
+  }
+
+  // 3. Fallback: Check Dynamic Store Registry (in-memory / file backup)
+  const registeredStore = getRegisteredDynamicStore(cleanId) ||
+    getAllRegisteredStores().find(s =>
+      s.slug?.toLowerCase() === cleanId ||
+      s.id?.toLowerCase() === cleanId ||
+      s.phone?.toLowerCase() === cleanId ||
+      s.merchant?.email?.toLowerCase() === cleanId
+    );
+
+  if (registeredStore) {
+    const regPassword = registeredStore.password || registeredStore.merchant?.password || 'password123';
+    if (regPassword !== cleanPassword) {
+      return {
+        success: false,
+        error: 'Incorrect password. Please enter the password you set during store creation.'
+      };
+    }
+
+    try {
+      const cookieStore = await cookies();
+      cookieStore.set('merchant_session', JSON.stringify({
+        merchantId: registeredStore.merchant?.id || registeredStore.id,
+        merchantName: registeredStore.ownerName || registeredStore.name,
+        storeId: registeredStore.id,
+        storeSlug: registeredStore.slug
+      }), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30
+      });
+    } catch (e) {}
+
     return {
-      success: false,
-      error: `Database connection error: ${err.message}`
+      success: true,
+      storeId: registeredStore.id,
+      slug: registeredStore.slug,
+      merchantName: registeredStore.ownerName || registeredStore.name,
+      storeName: registeredStore.name
     };
   }
 
@@ -123,3 +167,4 @@ export async function merchantLoginAction(identifier: string, password: string) 
     error: 'No merchant account found for this Mobile/Email/Store Slug. Please register your store first at /onboarding.'
   };
 }
+

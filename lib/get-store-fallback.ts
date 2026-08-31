@@ -1,10 +1,11 @@
-import { prisma } from '@/lib/prisma';
+import { prisma, withDbRetry } from '@/lib/prisma';
+import { getRegisteredDynamicStore } from '@/lib/store-registry';
 
 const DEMO_STORE_SLUGS = ['kirana-king', 'spicy-bites', 'glamour-salon', 'cyber-tech', 'velvet-fashion'];
 
 /**
- * Strictly retrieves store record from MongoDB database via Prisma.
- * Returns `null` if store is not found in the database.
+ * Retrieves store record from MongoDB database via Prisma, falling back to 
+ * registered dynamic stores in memory/disk if DB is unreachable or timing out.
  */
 export async function getStoreWithFallback(storeIdOrSlug: string): Promise<any> {
   if (!storeIdOrSlug) return null;
@@ -12,40 +13,42 @@ export async function getStoreWithFallback(storeIdOrSlug: string): Promise<any> 
   const targetKey = storeIdOrSlug.trim();
 
   try {
-    const dbStore = await prisma.store.findFirst({
-      where: {
-        OR: [
-          { id: targetKey },
-          { slug: targetKey.toLowerCase() }
-        ]
-      },
-      include: {
-        categories: {
-          orderBy: { sortOrder: 'asc' },
-          include: { products: true }
+    const dbStore = await withDbRetry(async () => {
+      return await prisma.store.findFirst({
+        where: {
+          OR: [
+            { id: targetKey },
+            { slug: targetKey.toLowerCase() }
+          ]
         },
-        products: {
-          orderBy: { createdAt: 'desc' }
-        },
-        orders: {
-          orderBy: { createdAt: 'desc' },
-          take: 50
-        },
-        customers: true,
-        merchant: {
-          include: {
-            stores: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-                businessType: true
+        include: {
+          categories: {
+            orderBy: { sortOrder: 'asc' },
+            include: { products: true }
+          },
+          products: {
+            orderBy: { createdAt: 'desc' }
+          },
+          orders: {
+            orderBy: { createdAt: 'desc' },
+            take: 50
+          },
+          customers: true,
+          merchant: {
+            include: {
+              stores: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  businessType: true
+                }
               }
             }
           }
         }
-      }
-    });
+      });
+    }, 1, 300);
 
     if (dbStore) {
       const isCurrentDemoStore = DEMO_STORE_SLUGS.includes(dbStore.slug);
@@ -66,9 +69,15 @@ export async function getStoreWithFallback(storeIdOrSlug: string): Promise<any> 
       };
     }
   } catch (err: any) {
-    console.error('[getStoreWithFallback] Database error:', err.message);
+    console.warn('[getStoreWithFallback] Database unavailable, checking dynamic store registry:', err.message);
   }
 
-  // Return null if store is not found in database — no fake fallback stores
+  // Fallback to Dynamic Registered Stores (in-memory / file backup)
+  const registeredStore = getRegisteredDynamicStore(targetKey);
+  if (registeredStore) {
+    return registeredStore;
+  }
+
   return null;
 }
+
